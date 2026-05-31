@@ -5,7 +5,7 @@ set "SCRIPT_DIR=%~dp0"
 set "PACKAGE_DIR=%SCRIPT_DIR%.."
 set "DB_NAME=web_fixture_management"
 
-:: ── 找 mysql.exe：優先 XAMPP，其次系統 PATH ──
+:: Find mysql.exe: prefer XAMPP, fall back to system PATH
 set "MYSQL_EXE="
 if exist "C:\xampp\mysql\bin\mysql.exe"   set "MYSQL_EXE=C:\xampp\mysql\bin\mysql.exe"
 if exist "C:\xampp\mariadb\bin\mysql.exe" set "MYSQL_EXE=C:\xampp\mariadb\bin\mysql.exe"

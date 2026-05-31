@@ -17,7 +17,7 @@ echo  Jig ^& Toolings Management System - Windows Network App
 echo ============================================================
 echo.
 
-:: ── Update Check ─────────────────────────────────────────────
+:: -- Update Check -----------------------------------------------
 set "UPDATE_URL=https://raw.githubusercontent.com/gossipred/jig-toolings-network-distribution/main/shared/latest.json"
 set "CURRENT_VERSION="
 for /f "tokens=2 delims==" %%v in ('findstr /r "^app\.version=" "%APP_DIR%\application.properties" 2^>nul') do set "CURRENT_VERSION=%%v"
@@ -26,7 +26,7 @@ if not "%CURRENT_VERSION%"=="" (
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         "try { $j = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 '%UPDATE_URL%').Content | ConvertFrom-Json; if ($j.latestVersion -ne '%CURRENT_VERSION%') { Write-Host ''; Write-Host '*** UPDATE AVAILABLE ***'; Write-Host ('  Current : %CURRENT_VERSION%'); Write-Host ('  Latest  : ' + $j.latestVersion); Write-Host ('  Notes   : ' + $j.notesUrl); Write-Host '  Run scripts\CHECK-UPDATE.bat for update instructions.'; Write-Host '' } } catch {}" 2>nul
 )
-:: ─────────────────────────────────────────────────────────────
+:: -----------------------------------------------------------------
 echo.
 
 if not exist "%JAR_FILE%" (

@@ -10,11 +10,10 @@ set "UPDATE_URL=https://raw.githubusercontent.com/gossipred/jig-toolings-network
 
 echo ============================================================
 echo  Jig ^& Toolings Management System - Semi-Automatic Updater
-echo  半自動更新工具
 echo ============================================================
 echo.
 
-:: ── Phase 0: Read current version ────────────────────────────
+:: -- Phase 0: Read current version --------------------------------
 set "CURRENT_VERSION="
 for /f "tokens=2 delims==" %%v in ('findstr /r "^app\.version=" "%APP_DIR%\application.properties" 2^>nul') do set "CURRENT_VERSION=%%v"
 
@@ -30,7 +29,7 @@ echo Installed version : %CURRENT_VERSION%
 echo Checking server   : %UPDATE_URL%
 echo.
 
-:: ── Phase 0: Fetch latest.json and compare ───────────────────
+:: -- Phase 0: Fetch latest.json and compare ----------------------
 set "LATEST_VERSION="
 set "RELEASE_DATE="
 set "NOTES_URL="
@@ -81,7 +80,7 @@ if "%CURRENT_VERSION%"=="%LATEST_VERSION%" (
     exit /b 0
 )
 
-:: ── Phase 1: Show update info and confirm ────────────────────
+:: -- Phase 1: Show update info and confirm -----------------------
 echo *** UPDATE AVAILABLE ***
 echo.
 echo   Installed version : %CURRENT_VERSION%
@@ -103,7 +102,7 @@ if /i not "%CONFIRM%"=="Y" (
     exit /b 0
 )
 
-:: ── Phase 1: Create timestamped backup ───────────────────────
+:: -- Phase 1: Create timestamped backup --------------------------
 echo.
 for /f "tokens=1-6 delims=/: " %%a in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "TIMESTAMP=%%a"
 set "BACKUP_DIR=%BACKUP_BASE%\update-backup-%TIMESTAMP%"
@@ -120,7 +119,7 @@ if exist "%APP_DIR%\application.properties"      copy /Y "%APP_DIR%\application.
 
 echo [1/5] Backup complete.
 
-:: ── Phase 2: Stop running system ─────────────────────────────
+:: -- Phase 2: Stop running system --------------------------------
 echo [2/5] Stopping the running system...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8080 ^| findstr LISTENING 2^>nul') do (
     taskkill /PID %%a /F >nul 2>&1
@@ -128,7 +127,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8080 ^| findstr LISTENING 2^
 timeout /t 2 /nobreak >nul
 echo [2/5] System stopped.
 
-:: ── Phase 3: Download and extract new JAR ────────────────────
+:: -- Phase 3: Download and extract new JAR -----------------------
 echo [3/5] Downloading new package...
 echo        %DOWNLOAD_ZIP_URL%
 echo.
@@ -158,11 +157,11 @@ if errorlevel 1 (
 
 echo [3/5] New JAR installed.
 
-:: ── Phase 4: Restart system ───────────────────────────────────
+:: -- Phase 4: Restart system -------------------------------------
 echo [4/5] Restarting the system...
 start "" "%PACKAGE_DIR%\START-JIG-NETWORK-APP.bat"
 
-:: ── Phase 5: Done ─────────────────────────────────────────────
+:: -- Phase 5: Done ------------------------------------------------
 echo [5/5] Update complete.
 echo.
 echo   Updated from v%CURRENT_VERSION% to v%LATEST_VERSION%
