@@ -5,7 +5,7 @@
   "platforms": {
     "windows": {
       "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.0.0/jig-toolings-network-windows-1.0.0.zip",
-      "sha256": "3f2bd560244e06ece1af265b4849dbfafb6379952b8d667d135a380f32cbbff8"
+      "sha256": "b69da4ab911491c134896f353ae2c1d926c038f17e8b75ca0753a9ea7c35685d"
     },
     "macos": {
       "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.0.0/jig-toolings-network-macos-1.0.0.zip",
