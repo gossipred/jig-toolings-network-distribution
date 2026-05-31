@@ -16,6 +16,7 @@ set -euo pipefail
 DIST_REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 CORE_REPO="${1:-/Users/gossipredm4/Documents/Codex/jig-and-toolings-management-system}"
 PACKAGE_DIR="$CORE_REPO/customer-package/windows-network-app"
+MYSQL_PACKAGE_DIR="$CORE_REPO/customer-package/mysql-windows"
 LAUNCHER_DIR="$DIST_REPO/windows/launcher"
 
 # ── Read version ─────────────────────────────────────────────────────────────
@@ -63,6 +64,28 @@ for f in "$LAUNCHER_DIR/scripts/"*.bat "$LAUNCHER_DIR/scripts/"*.ps1; do
     [ -f "$f" ] && cp "$f" "$PACKAGE_DIR/scripts/"
 done
 echo "[3/5] Launcher sync OK."
+echo ""
+
+# ── Step 3.5: Copy XAMPP installer and Java runtime ──────────────────────────
+echo "[3.5] Copying XAMPP-installer.exe and runtime/ from mysql-windows..."
+
+XAMPP_SRC="$MYSQL_PACKAGE_DIR/XAMPP-installer.exe"
+RUNTIME_SRC="$MYSQL_PACKAGE_DIR/runtime"
+
+if [ -f "$XAMPP_SRC" ]; then
+    cp "$XAMPP_SRC" "$PACKAGE_DIR/XAMPP-installer.exe"
+    echo "      XAMPP-installer.exe copied ($(du -sh "$XAMPP_SRC" | cut -f1))"
+else
+    echo "      [WARN] XAMPP-installer.exe not found at $XAMPP_SRC — skipped"
+fi
+
+if [ -d "$RUNTIME_SRC" ]; then
+    rm -rf "$PACKAGE_DIR/runtime"
+    cp -R "$RUNTIME_SRC" "$PACKAGE_DIR/runtime"
+    echo "      runtime/ copied ($(du -sh "$RUNTIME_SRC" | cut -f1))"
+else
+    echo "      [WARN] runtime/ not found at $RUNTIME_SRC — skipped"
+fi
 echo ""
 
 # ── Step 4: Create ZIP ────────────────────────────────────────────────────────
