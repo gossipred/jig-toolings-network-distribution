@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Jig Toolings Network Update Manifest",
+  "type": "object",
+  "required": ["latestVersion", "minimumSupportedVersion", "releaseDate", "platforms", "notesUrl"],
+  "properties": {
+    "latestVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "minimumSupportedVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "releaseDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "platforms": {
+      "type": "object",
+      "required": ["windows", "macos"],
+      "properties": {
+        "windows": { "$ref": "#/$defs/platformAsset" },
+        "macos": { "$ref": "#/$defs/platformAsset" }
+      },
+      "additionalProperties": false
+    },
+    "notesUrl": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "$defs": {
+    "platformAsset": {
+      "type": "object",
+      "required": ["packageUrl", "sha256"],
+      "properties": {
+        "packageUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

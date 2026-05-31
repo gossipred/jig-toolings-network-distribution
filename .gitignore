@@ -1,0 +1,30 @@
+.DS_Store
+*.log
+*.tmp
+
+# Generated release assets
+*.zip
+*.7z
+*.tar.gz
+*.dmg
+*.pkg
+*.exe
+*.msi
+
+# Bundled runtimes and installers
+runtime/
+jre/
+xampp/
+XAMPP-installer.exe
+
+# Customer runtime data
+license/*.lic
+uploads/
+backups/
+logs/
+data/
+
+# Local working folders
+dist/
+build/
+work/
