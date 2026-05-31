@@ -44,6 +44,17 @@ echo " Output     : $OUTPUT"
 echo "============================================================"
 echo ""
 
+# ── Step 0: Stop running Spring Boot to avoid JVM classloader corruption ─────
+echo "[0/5] Stopping Spring Boot (if running)..."
+SPRING_PID=$(lsof -t -iTCP:8080 2>/dev/null || true)
+if [ -n "$SPRING_PID" ]; then
+    kill "$SPRING_PID" 2>/dev/null || true
+    sleep 3
+    echo "[0/5] Spring Boot stopped (PID $SPRING_PID)."
+else
+    echo "[0/5] Spring Boot not running, skipping."
+fi
+
 # ── Step 1: Maven build ───────────────────────────────────────────────────────
 echo "[1/5] Building JAR with Maven..."
 cd "$CORE_REPO"
