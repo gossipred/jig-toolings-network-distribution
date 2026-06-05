@@ -120,6 +120,29 @@ ZIP_SIZE=$(du -sh "$OUTPUT" | cut -f1)
 echo "[4/5] ZIP created: $ZIP_SIZE"
 echo ""
 
+# ── Step 4b: Build NSIS installer EXE ────────────────────────────────────────
+EXE_NAME="JigToolingsSetup-${VERSION}.exe"
+EXE_OUTPUT="$DIST_DIR/$EXE_NAME"
+EXE_URL="https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v${VERSION}/${EXE_NAME}"
+EXE_SHA256=""
+
+if ! command -v makensis &>/dev/null; then
+    echo "[4b] WARN: makensis not found — skipping EXE build."
+    echo "           Install with: brew install makensis"
+else
+    echo "[4b] Building installer EXE with NSIS..."
+    find "$PACKAGE_DIR" -name ".DS_Store" -delete 2>/dev/null || true
+    makensis \
+        -DVERSION="$VERSION" \
+        -DPACKAGE_DIR="$PACKAGE_DIR" \
+        -DOUTFILE="$EXE_OUTPUT" \
+        "$DIST_REPO/windows/installer/jig-setup.nsi"
+    EXE_SHA256=$(shasum -a 256 "$EXE_OUTPUT" | awk '{print $1}')
+    EXE_SIZE=$(du -sh "$EXE_OUTPUT" | cut -f1)
+    echo "[4b] EXE created: $EXE_SIZE"
+    echo ""
+fi
+
 # ── Step 5: Update manifests ──────────────────────────────────────────────────
 echo "[5/5] Updating shared/latest.json and releases/${VERSION}/manifest.json..."
 
@@ -135,9 +158,11 @@ fi
 python3 - <<PYEOF
 import json, os
 
-sha256 = "$SHA256"
+sha256      = "$SHA256"
 package_url = "$PACKAGE_URL"
-version = "$VERSION"
+version     = "$VERSION"
+exe_sha256  = "$EXE_SHA256"
+exe_url     = "$EXE_URL"
 
 paths = [
     "$DIST_REPO/shared/latest.json",
@@ -150,20 +175,24 @@ for path in paths:
     d["latestVersion"] = version
     d["platforms"]["windows"]["packageUrl"] = package_url
     d["platforms"]["windows"]["sha256"] = sha256
+    if exe_sha256:
+        d["platforms"]["windows"]["installerUrl"]    = exe_url
+        d["platforms"]["windows"]["installerSha256"] = exe_sha256
     with open(path, "w") as f:
         json.dump(d, f, indent=2, ensure_ascii=False)
         f.write("\n")
     print(f"  Updated: {path}")
 
-# Update checksums.txt
 checksums_path = "$RELEASE_DIR/checksums.txt"
 lines = []
 if os.path.exists(checksums_path):
     with open(checksums_path) as f:
         for line in f:
-            if "windows" not in line:
+            if "windows" not in line and "JigToolings" not in line:
                 lines.append(line.rstrip())
 lines.append(f"{sha256}  $ZIP_NAME")
+if exe_sha256:
+    lines.append(f"{exe_sha256}  $EXE_NAME")
 with open(checksums_path, "w") as f:
     f.write("\n".join(lines) + "\n")
 print(f"  Updated: {checksums_path}")
@@ -171,12 +200,28 @@ PYEOF
 
 echo "[5/5] Manifests updated."
 echo ""
+
+# ── Step 5b: Upload EXE to GitHub Release ────────────────────────────────────
+if [ -n "$EXE_SHA256" ] && [ -f "$EXE_OUTPUT" ]; then
+    echo "[5b] Uploading EXE to GitHub Release v${VERSION}..."
+    gh release upload "v${VERSION}" "$EXE_OUTPUT" \
+        --repo gossipred/jig-toolings-network-distribution \
+        --clobber
+    echo "[5b] EXE uploaded."
+    echo ""
+fi
+
 echo "============================================================"
 echo " Release complete!"
 echo ""
 echo " ZIP     : $OUTPUT"
 echo " Size    : $ZIP_SIZE"
 echo " SHA256  : $SHA256"
+if [ -n "$EXE_SHA256" ]; then
+echo ""
+echo " EXE     : $EXE_OUTPUT"
+echo " EXE SHA : $EXE_SHA256"
+fi
 echo ""
 echo " Next steps:"
 echo "   1. Test the ZIP on a Windows machine."
