@@ -137,6 +137,10 @@ else
         -DPACKAGE_DIR="$PACKAGE_DIR" \
         -DOUTFILE="$EXE_OUTPUT" \
         "$DIST_REPO/windows/installer/jig-setup.nsi"
+    if [ ! -s "$EXE_OUTPUT" ]; then
+        echo "[ERROR] EXE output is empty or missing: $EXE_OUTPUT"
+        exit 1
+    fi
     EXE_SHA256=$(shasum -a 256 "$EXE_OUTPUT" | awk '{print $1}')
     EXE_SIZE=$(du -sh "$EXE_OUTPUT" | cut -f1)
     echo "[4b] EXE created: $EXE_SIZE"
