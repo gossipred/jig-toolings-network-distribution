@@ -10,8 +10,8 @@
       "installerSha256": "69098a0a673d2835e798bcd67cdb3fc3ace9ff49901f14f0751b4bec7ee09bd4"
     },
     "macos": {
-      "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.0.0/jig-toolings-network-macos-1.0.0.zip",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.1.0/jig-toolings-network-macos-1.1.0.zip",
+      "sha256": "55d2674dba803d41fa4052ae45cf5ce5671bad3846ae64a8fdfda6d96a88a4ca"
     }
   },
   "notesUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/tag/v1.1.0"
