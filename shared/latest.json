@@ -11,7 +11,7 @@
     },
     "macos": {
       "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.1.0/jig-toolings-network-macos-1.1.0.zip",
-      "sha256": "55d2674dba803d41fa4052ae45cf5ce5671bad3846ae64a8fdfda6d96a88a4ca"
+      "sha256": "fbf346c2857e5df0132bfda0f42941731d8d3fcd44d58bdcd9a6f25b1bc0a7e9"
     }
   },
   "notesUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/tag/v1.1.0"
