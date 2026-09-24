@@ -161,6 +161,7 @@ fi
 
 python3 - <<PYEOF
 import json, os
+from datetime import date
 
 sha256      = "$SHA256"
 package_url = "$PACKAGE_URL"
@@ -182,6 +183,10 @@ for path in paths:
     if exe_sha256:
         d["platforms"]["windows"]["installerUrl"]    = exe_url
         d["platforms"]["windows"]["installerSha256"] = exe_sha256
+    # releaseDate/notesUrl used to only get updated by hand after every release
+    # (see jig-license-automation session notes) — fixed here so it can't be forgotten again.
+    d["releaseDate"] = date.today().isoformat()
+    d["notesUrl"] = f"https://github.com/gossipred/jig-toolings-network-distribution/releases/tag/v{version}"
     with open(path, "w") as f:
         json.dump(d, f, indent=2, ensure_ascii=False)
         f.write("\n")
