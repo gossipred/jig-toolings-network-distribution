@@ -108,6 +108,8 @@ try {
 
     # Files that older versions had but this one replaces (e.g. renamed guides)
     $obsolete = [IO.Path]::Combine($Source, "scripts", "obsolete-files.txt")
+    # The setup wizard has already copied the new files (-SkipFiles): use the installed list
+    if (-not (Test-Path $obsolete)) { $obsolete = [IO.Path]::Combine($PackageDir, "scripts", "obsolete-files.txt") }
     if (Test-Path $obsolete) {
         foreach ($line in [IO.File]::ReadAllLines($obsolete, [Text.Encoding]::UTF8)) {
             $rel = $line.Trim()

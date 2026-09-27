@@ -91,6 +91,25 @@ echo "[2.5] Launcher sync OK."
 echo ""
 
 
+# Guides show the release version in their header; stamp it so it can never
+# lag behind the program (INSTALL-GUIDE-*, USER-GUIDE-* headers only).
+python3 - "$PACKAGE_DIR" "$DIST_REPO/docs/install-guides" "$VERSION" <<'STAMP'
+import re, sys, pathlib
+version = sys.argv[3]
+for folder in sys.argv[1:3]:
+    for p in pathlib.Path(folder).glob("*-GUIDE-*.txt"):
+        if not (p.name.startswith("INSTALL-GUIDE") or p.name.startswith("USER-GUIDE")):
+            continue
+        raw = p.read_bytes()
+        bom = raw.startswith(b"\xef\xbb\xbf")
+        text = raw.decode("utf-8-sig")
+        lines = text.split("\n")
+        for i in range(min(6, len(lines))):
+            lines[i] = re.sub(r"\bv\d+\.\d+(\.\d+)?\b", "v" + version, lines[i])
+        out = "\n".join(lines).encode("utf-8")
+        p.write_bytes((b"\xef\xbb\xbf" if bom else b"") + out)
+STAMP
+
 # Windows' built-in unzip (used by customers' existing updaters) fails on
 # non-ASCII file names in zips made on a Mac — keep every packaged name ASCII.
 BAD_NAMES="$(cd "$PACKAGE_DIR" && find . -not -path "./runtime/*" | LC_ALL=C grep '[^ -~]' || true)"

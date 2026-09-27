@@ -115,12 +115,14 @@ for item in "$SRC"/* ; do
 done
 
 # Files that older versions had but this one replaces (e.g. renamed guides)
-if [ -f "$SRC/scripts/obsolete-files.txt" ]; then
+OBSOLETE="$SRC/scripts/obsolete-files.txt"
+[ -f "$OBSOLETE" ] || OBSOLETE="$PKG/scripts/obsolete-files.txt"
+if [ -f "$OBSOLETE" ]; then
     while IFS= read -r rel || [ -n "$rel" ]; do
         rel="$(printf '%s' "$rel" | tr -d '\r')"
         case "$rel" in ''|'#'*|*..*|license/*|uploads/*|logs/*|backups/*) continue ;; esac
         [ -f "$PKG/$rel" ] && rm -f "$PKG/$rel"
-    done < "$SRC/scripts/obsolete-files.txt"
+    done < "$OBSOLETE"
 fi
 
 # -- 3. Settings merge -----------------------------------------------------

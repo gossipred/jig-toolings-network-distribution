@@ -35,6 +35,7 @@ So, for each change:
 - [ ] Online update tested from the previous release: Mac with a local fake server (`JIG_UPDATE_URL`), Windows VM likewise (server bound to the vmnet address only — en1 is a public IP)
 - [ ] Production DB: apply new migrations to `web_fixture_management` **before** restarting jig.aurastudio.studio on the new jar
 - [ ] Release notes start with "how to update" (online steps)
+- Guide headers (INSTALL-GUIDE-*, USER-GUIDE-*) are stamped with the release version automatically by the release scripts; renamed/removed files go in `scripts/obsolete-files.txt`
 
 ## Publishing order
 
