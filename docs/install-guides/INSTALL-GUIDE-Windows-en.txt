@@ -1,0 +1,120 @@
+﻿================================================================
+  Jig & Toolings Management System
+  Windows Network Edition - Installation Guide  v1.3.0
+  * Please read this guide BEFORE installing to avoid most errors
+  中文版：INSTALL-GUIDE-Windows-zh-TW.txt
+================================================================
+
+[DOWNLOADS]
+https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+Files you need (choose one method):
+  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.3.0.exe
+  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.3.0.zip
+
+XAMPP is also available from the official website:
+https://www.apachefriends.org/download.html
+(We recommend XAMPP-installer.exe from our download page - the tested version.)
+
+Install on the SERVER computer only (one machine). Other computers in the
+company do not need to install anything - they just use a web browser.
+
+================================================================
+STEP 1: Install XAMPP (MySQL database - required for both methods, once)
+================================================================
+1. Double-click "XAMPP-installer.exe"
+2. A "UAC / Program Files" warning appears -> just click OK
+   (a standard XAMPP notice; you do NOT need to disable UAC)
+3. "Select Components" page: only MySQL is needed.
+   You may uncheck Tomcat, Perl, FileZilla, Mercury, Webalizer and
+   Fake Sendmail - installation will be much faster
+   (If Apache/PHP are greyed out, leave them as they are.)
+4. Keep the default installation folder "C:\xampp" - do NOT change it
+   !! If installed elsewhere, the system cannot find the database
+5. Unpacking takes about 5-10 minutes (Windows scans every file) - please wait
+6. XAMPP Control Panel opens when finished:
+   - Method A: just close it - the setup wizard handles MySQL for you
+   - Method B: click "Start" on the MySQL row; green means it is running
+
+================================================================
+STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.3.0.exe
+================================================================
+1. Double-click "JigToolingsSetup-1.3.0.exe"
+   If "Windows protected your PC" appears -> "More info" -> "Run anyway"
+2. Click "Next"; you may choose the install folder (e.g. D:\JigSystem)
+3. The wizard automatically:
+   - sets MySQL to start automatically with Windows
+   - creates the database
+   - creates the desktop shortcut
+4. On the last page tick "Launch" -> Finish
+
+   "XAMPP not detected"      -> please complete Step 1 first
+   "MySQL failed to start"   -> open XAMPP Control Panel, click Start on
+                                MySQL, then run scripts\install-database.bat
+                                in the install folder
+
+================================================================
+STEP 2 (Method B): Unzip and create the database
+================================================================
+1. Right-click the zip -> "Extract All", to a permanent folder (e.g. D:\JigSystem)
+2. Make sure MySQL is green in XAMPP Control Panel
+3. Double-click "scripts\install-database.bat"
+   If asked for a password just press Enter (XAMPP has no password by default)
+   "Database installation completed!" means done (only needed once)
+4. Double-click "START-JIG-NETWORK-APP.bat"
+
+   !! With Method B, start MySQL in XAMPP Control Panel after every reboot
+      (or tick the "Service" box next to MySQL to start it automatically)
+
+================================================================
+STEP 3: Start and sign in
+================================================================
+1. Double-click the desktop shortcut (Method B: START-JIG-NETWORK-APP.bat)
+2. A console window checks Java, MySQL and port 8080
+3. After "[OK] The system is ready." the login page opens in your browser
+4. Default account: admin / password: 123456
+   !! Change the password right after signing in (Account Settings)
+
+   If you see [ERROR]:
+   - MySQL is not responding     -> start MySQL in XAMPP Control Panel
+   - Port 8080 is already in use -> run scripts\stop-system.bat, then start again
+
+================================================================
+STEP 4: Free trial and license
+================================================================
+- A 30-day free trial starts automatically on first launch - no license
+  file needed. Remaining days are shown on the "License" page.
+- To purchase a license:
+  1. Copy the Machine ID from the "License" page
+  2. Contact gossipred5598@gmail.com with your Machine ID
+  3. The license file (.lic) is emailed to you after payment is confirmed
+  4. On the "License" page choose the .lic file -> Install License
+- The license is bound to the SERVER computer; browser users on other
+  computers do not need their own license.
+
+================================================================
+[OTHER COMPUTERS IN THE COMPANY]
+================================================================
+1. On the server run scripts\show-network-address.bat to see its LAN IP
+2. On other computers open http://(that IP):8080 in a browser
+3. If they cannot connect, run scripts\open-firewall-8080.bat as
+   Administrator (right-click -> Run as administrator)
+
+================================================================
+[DAILY BACKUP]
+================================================================
+Double-click scripts\backup-now.bat; backups are saved in the backups\ folder.
+Recommended once a day before leaving work.
+
+================================================================
+[UPDATES]
+================================================================
+1. "Check for Updates" (top right of the home page) shows current/latest version
+2. If a new version exists, double-click scripts\UPDATE-JIG-NETWORK-APP.bat
+   on the server -> backs up data, downloads the new version, restarts
+   Updates keep all existing data (jig records, license, uploaded files)
+
+================================================================
+[CONTACT]
+Aura Studio  |  gossipred5598@gmail.com
+================================================================

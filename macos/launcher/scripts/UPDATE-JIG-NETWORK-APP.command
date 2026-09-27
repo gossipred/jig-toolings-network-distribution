@@ -72,7 +72,7 @@ echo "[WARNING] Stop the running system and update the JAR file."
 echo "          LAN users will be disconnected during the update."
 echo
 read -r -p "Proceed with update? (y to continue / any other key to cancel): " CONFIRM
-if [ "${CONFIRM,,}" != "y" ]; then
+if [ "$(printf '%s' "$CONFIRM" | tr '[:upper:]' '[:lower:]')" != "y" ]; then
     echo
     echo "Update cancelled."
     read -r -p "Press Enter to close..."

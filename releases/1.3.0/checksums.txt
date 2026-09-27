@@ -1,3 +1,3 @@
-d08eb761ad9dc0cf031ebca9416a2bdeca7689f3fc2ed571d4b242667ef02c39  jig-toolings-network-macos-1.3.0.zip
-53c876a74da52675b66642d9a405a9e7bda7228ff5b7df23582a1befb9c33cb2  jig-toolings-network-windows-1.3.0.zip
-e14db1d7b7d1f984f89fb9d885bad36e86ff4fec742718c24266b16ad957b1a1  JigToolingsSetup-1.3.0.exe
+fff98430be8b3d37130763109019f844e81b10612291fcc3c998c798d10991e1  jig-toolings-network-windows-1.3.0.zip
+69f40d6efa35b33d78b72bf3c1e6630621dd345373102a5bb42bfb36dd6fe5b5  JigToolingsSetup-1.3.0.exe
+54b22b209802c72d376ed502e87248f199952c73f7c89c7cd7b943a3af0961ed  jig-toolings-network-macos-1.3.0.zip

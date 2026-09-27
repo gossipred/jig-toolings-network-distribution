@@ -1,0 +1,123 @@
+﻿================================================================
+  Jig & Toolings Management System
+  macOS Network Edition - Installation Guide  v1.3.0
+  * Please read this guide BEFORE installing to avoid most errors
+  中文版：INSTALL-GUIDE-macOS-zh-TW.txt
+================================================================
+
+[DOWNLOADS]
+https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+Files you need:
+  1. XAMPP-installer.dmg (MySQL database)
+  2. jig-toolings-network-macos-1.3.0.zip (the system)
+
+XAMPP is also available from the official website:
+https://www.apachefriends.org/download.html
+(We recommend XAMPP-installer.dmg from our download page - the tested version.)
+
+Install on the SERVER computer only (one machine). Other computers in the
+company (Mac or Windows) do not need to install anything - they just use a
+web browser.
+
+[SECURITY TIP: "cannot be opened because the developer cannot be verified"]
+  1. Click "Done" / "Cancel" to close the message
+  2. Open System Settings -> Privacy & Security and scroll down
+  3. Next to "... was blocked" click "Open Anyway" and enter your password
+  4. Double-click the file again and choose "Open"
+  (On older macOS you can also right-click the file -> "Open")
+
+================================================================
+STEP 1: Install XAMPP (MySQL database - once)
+================================================================
+1. Double-click "XAMPP-installer.dmg", then the installer inside it
+   (If blocked, see the SECURITY TIP above.)
+2. Apple Silicon (M-series) Macs: if asked to install Rosetta -> "Install"
+   (XAMPP is an Intel build and needs Rosetta)
+3. Click "Next" with default options; keep the location "/Applications/XAMPP"
+4. On the last page you may untick "Launch XAMPP"
+   (MySQL is set up in Step 3 - the XAMPP control panel is not needed)
+
+================================================================
+STEP 2: Unzip the system
+================================================================
+1. Double-click "jig-toolings-network-macos-1.3.0.zip" to unzip it
+2. Move the "mac-network-app" folder to a permanent location
+   (e.g. Applications or your home folder - not a folder you will clean up)
+3. [Unblock all scripts at once - recommended]
+   Open Terminal, type the command below (you can drag the mac-network-app
+   folder into Terminal to insert its path) and press Enter:
+     xattr -dr com.apple.quarantine (drag in the mac-network-app folder)
+   After this, the .command files will not be blocked one by one.
+
+================================================================
+STEP 3: Make MySQL start automatically (once)
+================================================================
+1. Open mac-network-app -> scripts, double-click "setup-mysql-autostart.command"
+2. Enter your Mac login password when asked (nothing is shown while typing;
+   press Enter when done)
+3. "[OK] MySQL is running and will start automatically at every boot."
+   means done. MySQL now starts at every boot - no need to open the XAMPP
+   control panel (newer macOS versions may block that panel).
+
+   If you see [ERROR], please send us a screenshot.
+   To undo: double-click "remove-mysql-autostart.command" in scripts.
+
+================================================================
+STEP 4: Create the database (once)
+================================================================
+1. In the scripts folder double-click "install-database.command"
+2. If asked for a password just press Enter (XAMPP has no password by default)
+3. "Database installation completed!" means done
+
+================================================================
+STEP 5: Start and sign in
+================================================================
+1. Double-click "START-JIG-NETWORK-APP.command" in mac-network-app
+2. A Terminal window checks Java, MySQL and port 8080
+3. After "[OK] The system is ready." the login page opens in your browser
+4. Default account: admin / password: 123456
+   !! Change the password right after signing in (Account Settings)
+
+   If you see [ERROR]:
+   - MySQL is not responding     -> run scripts/setup-mysql-autostart.command again
+   - Port 8080 is already in use -> run scripts/stop-system.command, then start again
+
+================================================================
+STEP 6: Free trial and license
+================================================================
+- A 30-day free trial starts automatically on first launch - no license
+  file needed. Remaining days are shown on the "License" page.
+- To purchase a license:
+  1. Copy the Machine ID from the "License" page
+  2. Contact gossipred5598@gmail.com with your Machine ID
+  3. The license file (.lic) is emailed to you after payment is confirmed
+  4. On the "License" page choose the .lic file -> Install License
+- The license is bound to the SERVER computer; browser users on other
+  computers do not need their own license.
+
+================================================================
+[OTHER COMPUTERS IN THE COMPANY]
+================================================================
+1. On the server run scripts/show-network-address.command to see its LAN IP
+2. On other computers open http://(that IP):8080 in a browser
+3. If they cannot connect, run scripts/open-firewall-8080.command on the server
+
+================================================================
+[DAILY BACKUP]
+================================================================
+Double-click scripts/backup-now.command; backups are saved in the backups folder.
+Recommended once a day before leaving work.
+
+================================================================
+[UPDATES]
+================================================================
+1. "Check for Updates" (top right of the home page) shows current/latest version
+2. If a new version exists, double-click scripts/UPDATE-JIG-NETWORK-APP.command
+   on the server -> backs up data, downloads the new version, restarts
+   Updates keep all existing data (jig records, license, uploaded files)
+
+================================================================
+[CONTACT]
+Aura Studio  |  gossipred5598@gmail.com
+================================================================

@@ -5,6 +5,7 @@
 # Usage:
 #   bash macos/installer/release-macos.sh
 #   bash macos/installer/release-macos.sh /path/to/core-repo
+#   SKIP_MAVEN=1 bash macos/installer/release-macos.sh   # packaging-only fix, reuse existing jar
 #
 # Output:
 #   macos/installer/dist/jig-toolings-network-macos-<VERSION>.zip
@@ -63,10 +64,14 @@ echo ""
 # afterwards to bring production back up on the freshly built jar.
 
 # ── Step 1: Maven build ───────────────────────────────────────────────────────
-echo "[1/4] Building JAR with Maven..."
-cd "$CORE_REPO"
-/opt/homebrew/bin/mvn -Dmaven.repo.local=.m2/repository package -q
-echo "[1/4] Maven build OK."
+if [ "${SKIP_MAVEN:-0}" = "1" ]; then
+    echo "[1/4] SKIP_MAVEN=1 — reusing existing jar."
+else
+    echo "[1/4] Building JAR with Maven..."
+    cd "$CORE_REPO"
+    /opt/homebrew/bin/mvn -Dmaven.repo.local=.m2/repository package -q
+    echo "[1/4] Maven build OK."
+fi
 echo ""
 
 # ── Step 2: Assemble package directory ───────────────────────────────────────
@@ -94,7 +99,8 @@ find . -name ".DS_Store" -delete 2>/dev/null || true
 zip -r "$OUTPUT" . \
     --exclude "*/.DS_Store" \
     --exclude ".DS_Store" \
-    --exclude "*.sh" \
+    --exclude "*/build-*.sh" \
+    --exclude "XAMPP-installer.dmg" \
     --exclude ".gitignore" \
     --exclude "backups/*" \
     --exclude "logs/*" \
@@ -156,6 +162,22 @@ print(f"  Updated: {checksums_path}")
 PYEOF
 
 echo "[4/4] Manifests updated."
+echo ""
+
+# ── Step 5: Upload ZIP + standalone XAMPP dmg to the GitHub Release ──────────
+# XAMPP is no longer inside the zip (2026-09-27, same as Windows) — it ships as
+# its own Release asset. update-download.sh MUST stay in the zip: the updater
+# calls it (an old --exclude "*.sh" silently dropped it, breaking Mac updates).
+XAMPP_DMG="$PACKAGE_DIR/XAMPP-installer.dmg"
+if gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
+    UPLOADS=("$OUTPUT")
+    [ -f "$XAMPP_DMG" ] && UPLOADS+=("$XAMPP_DMG")
+    gh release upload "v${VERSION}" "${UPLOADS[@]}" \
+        --repo gossipred/jig-toolings-network-distribution --clobber
+    echo "[5] Uploaded: ${#UPLOADS[@]} file(s)."
+else
+    echo "[5] Release v${VERSION} not found — create it, then upload $OUTPUT and $XAMPP_DMG"
+fi
 echo ""
 
 echo "============================================================"

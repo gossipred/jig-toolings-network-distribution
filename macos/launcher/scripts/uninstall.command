@@ -15,7 +15,7 @@ echo
 echo "To delete all data too, use uninstall-and-delete-data.command instead."
 echo
 read -r -p "Continue with normal uninstall? (y/N): " CONFIRM
-if [ "${CONFIRM,,}" != "y" ]; then
+if [ "$(printf '%s' "$CONFIRM" | tr '[:upper:]' '[:lower:]')" != "y" ]; then
     exit 0
 fi
 
