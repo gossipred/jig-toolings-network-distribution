@@ -1,6 +1,6 @@
 ﻿================================================================
   Jig & Toolings Management System
-  macOS Network Edition - Installation Guide  v1.4.0
+  macOS Network Edition - Installation Guide  v1.4.1
   * Please read this guide BEFORE installing to avoid most errors
   中文版：INSTALL-GUIDE-macOS-zh-TW.txt
 ================================================================
