@@ -1,0 +1,7 @@
+# Files from older versions that this version replaces or no longer needs.
+# apply-update removes them after installing the new files. One path per line,
+# relative to the installation folder, "/" as separator. Never list data folders.
+安裝說明.txt
+操作說明.txt
+documents/安裝說明.txt
+INSTALL-GUIDE-en.txt

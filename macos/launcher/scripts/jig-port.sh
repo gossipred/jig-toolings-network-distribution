@@ -22,3 +22,16 @@ jig_java_pids_on_port() {
         fi
     done
 }
+
+# Asks the running system on a port to back up before it is stopped. The system
+# decides: it skips when today's backup is done or the option is off.
+jig_backup_before_stop() {
+    local port="$1" token_file="$2/logs/.internal-token" token
+    [ -n "$port" ] && [ -f "$token_file" ] || return 0
+    token="$(tr -d '[:space:]' < "$token_file" 2>/dev/null)"
+    echo "Checking today's backup before stopping (this can take a minute)..."
+    if ! curl -s -m 900 -X POST -H "X-Jig-Token: $token" "http://127.0.0.1:$port/internal/backup/before-stop" \
+            | sed 's/^/  /'; then
+        echo "  (Backup check skipped: the system did not answer.)"
+    fi
+}

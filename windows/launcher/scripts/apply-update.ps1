@@ -6,7 +6,10 @@
 #   3. Merge app\application.properties: keep the customer's values (port,
 #      database password...), take the new app.version, add new settings
 #   4. Apply database migrations that have not run yet (schema_migrations)
-# Exit codes: 0 = done, 1 = nothing changed, 2 = failed part-way.
+# If a step after the database backup fails, the previous version is put back
+# (app\ and scripts\ from the updater's backup, database from the dump).
+# Exit codes: 0 = done, 1 = nothing changed, 2 = failed part-way and could not
+# be undone, 3 = failed and the previous version was restored.
 param(
     [Parameter(Mandatory)][string]$Source,
     [Parameter(Mandatory)][string]$PackageDir,
@@ -103,6 +106,19 @@ try {
         }
     }
 
+    # Files that older versions had but this one replaces (e.g. renamed guides)
+    $obsolete = [IO.Path]::Combine($Source, "scripts", "obsolete-files.txt")
+    if (Test-Path $obsolete) {
+        foreach ($line in [IO.File]::ReadAllLines($obsolete, [Text.Encoding]::UTF8)) {
+            $rel = $line.Trim()
+            if ($rel -eq "" -or $rel.StartsWith("#") -or $rel.Contains("..")) { continue }
+            $top = $rel.Split("/")[0]
+            if (@("license", "uploads", "logs", "backups") -contains $top) { continue }
+            $target = Join-Path $PackageDir ($rel -replace "/", [IO.Path]::DirectorySeparatorChar)
+            if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force }
+        }
+    }
+
     # -- 3. Settings merge -----------------------------------------------
     Write-Host "    Updating settings (your port and database settings are kept)..."
     $lines = [Collections.Generic.List[string]]::new([IO.File]::ReadAllLines($PropsPath))
@@ -146,7 +162,28 @@ try {
     }
 } catch {
     Write-Host "[ERROR] $_"
+    Write-Host "    Restoring the previous version..."
+    $restored = $true
+    try {
+        foreach ($name in @("app", "scripts")) {
+            $from = Join-Path $BackupDir $name
+            if (Test-Path $from) {
+                Copy-Item -Path (Join-Path $from "*") -Destination (Join-Path $PackageDir $name) -Recurse -Force
+            } else {
+                $restored = $false
+            }
+        }
+        $back = Invoke-MySql @($DbName) $DumpFile
+        if ($back.Code -ne 0) { throw "Database restore failed: $($back.Err)" }
+    } catch {
+        Write-Host "[ERROR] Could not restore the previous version: $_"
+        $restored = $false
+    }
     Write-Host "        Backup of files and database: $BackupDir"
+    if ($restored) {
+        Write-Host "    Previous version restored."
+        exit 3
+    }
     exit 2
 }
 

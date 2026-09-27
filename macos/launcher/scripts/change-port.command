@@ -72,6 +72,7 @@ RUNNING="$(jig_java_pids_on_port "$OLD_PORT")"
 if [ -n "$RUNNING" ]; then
     read -r -p "The system is running on the old port $OLD_PORT. Restart it now on port $NEW_PORT? (y/n): " RS
     if [ "$(printf '%s' "$RS" | tr '[:upper:]' '[:lower:]')" = "y" ]; then
+        jig_backup_before_stop "$OLD_PORT" "$PACKAGE_DIR"
         kill $RUNNING 2>/dev/null; sleep 3
         STILL="$(jig_java_pids_on_port "$OLD_PORT")"; [ -n "$STILL" ] && kill -9 $STILL 2>/dev/null
         open "$PACKAGE_DIR/START-JIG-NETWORK-APP.command"

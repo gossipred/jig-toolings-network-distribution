@@ -49,7 +49,7 @@ When launcher behaviour changes, update the scripts here **and** in the core rep
 
 ```text
 jig-toolings-network-windows-VERSION.zip
-  安裝說明.txt                   ← Chinese installation guide
+  INSTALL-GUIDE-Windows-zh-TW.txt                   ← Chinese installation guide
   操作說明.txt                   ← Chinese operation guide
   README-FIRST.md
   START-JIG-NETWORK-APP.bat

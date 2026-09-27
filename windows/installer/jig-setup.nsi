@@ -46,7 +46,11 @@ Var BACKUPDIR
 !define MUI_LICENSEPAGE_TEXT_TOP "請閱讀以下安裝說明："
 !define MUI_LICENSEPAGE_BUTTON "我同意(&A)"
 
-!define MUI_FINISHPAGE_RUN "$INSTDIR\START-JIG-NETWORK-APP.bat"
+; The installer runs as administrator. Starting the system from it directly would
+; make the system an administrator process that stop-system, change-port and the
+; updater (normal user) cannot stop. explorer.exe starts it as the signed-in user.
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION StartSystemAsUser
 !define MUI_FINISHPAGE_RUN_TEXT "立即啟動治具管理系統"
 !define MUI_FINISHPAGE_SHOWREADME ""
 !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
@@ -63,6 +67,10 @@ Var BACKUPDIR
 
 ; ── 語言 ──────────────────────────────────────────────────────────────────────
 !insertmacro MUI_LANGUAGE "TradChinese"
+
+Function StartSystemAsUser
+  Exec '"$WINDIR\explorer.exe" "$INSTDIR\START-JIG-NETWORK-APP.bat"'
+FunctionEnd
 
 ; ── 前置檢查：XAMPP 必須先裝好（2026-09-27 起 XAMPP 改成獨立安裝，不再包進本安裝檔）
 Function .onInit

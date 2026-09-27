@@ -95,6 +95,7 @@ if defined RUN_PORT if not "%RUN_PORT%"=="%JIG_PORT%" (
         tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
         if not errorlevel 1 (
             echo [INFO] The system is still running on the previous port %RUN_PORT%. Stopping it...
+            call "%SCRIPT_DIR%jig-backup-before-stop.bat" %RUN_PORT%
             taskkill /PID %%a /F >nul 2>&1
             timeout /t 3 /nobreak >nul
         )

@@ -1,6 +1,6 @@
 ﻿================================================================
   治具及模具管理系統（Jig & Toolings Management System）
-  Windows 網路版安裝說明  v1.3.1
+  Windows 網路版安裝說明  v1.4.0
   ※ 請先讀完本說明再開始安裝，可避免大部分的安裝錯誤
   English version: INSTALL-GUIDE-Windows-en.txt
 ================================================================
@@ -9,8 +9,8 @@
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 需要下載的檔案（兩種安裝方式擇一）：
-  方式 A（建議）：XAMPP-installer.exe ＋ JigToolingsSetup-1.3.1.exe
-  方式 B（手動）：XAMPP-installer.exe ＋ jig-toolings-network-windows-1.3.1.zip
+  方式 A（建議）：XAMPP-installer.exe ＋ JigToolingsSetup-1.4.0.exe
+  方式 B（手動）：XAMPP-installer.exe ＋ jig-toolings-network-windows-1.4.0.zip
 
 XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.html
 （建議用下載區的 XAMPP-installer.exe，是我們測試過的版本）
@@ -36,9 +36,9 @@ XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.ht
    - 方式 B：點 MySQL 那排的「Start」，出現綠色代表正常
 
 ================================================================
-第 2 步（方式 A）：執行安裝精靈 JigToolingsSetup-1.3.1.exe
+第 2 步（方式 A）：執行安裝精靈 JigToolingsSetup-1.4.0.exe
 ================================================================
-1. 點兩下「JigToolingsSetup-1.3.1.exe」
+1. 點兩下「JigToolingsSetup-1.4.0.exe」
    若出現藍色「Windows 已保護您的電腦」→ 按「其他資訊」→「仍要執行」
 2. 依畫面按「下一步」，安裝資料夾預設 C:\JigSystem，也可以改成其他位置（例如 D:\JigSystem）
    ⚠️ 請勿選 C:\Program Files，系統需要在自己的資料夾寫入資料
@@ -101,19 +101,25 @@ XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.ht
    （右鍵 → 以系統管理員身分執行）
 
 ================================================================
-【每日備份】
+【資料備份與還原】
 ================================================================
-點兩下 scripts\backup-now.bat，備份檔存在 backups\ 資料夾
-建議每天下班前執行一次。
+系統每天自動備份資料庫與上傳的附件（照片、圖檔）（預設 18:00，可在「系統設定 → 資料備份」修改）。
+停止系統時若今天還沒備份，會先備份再停止；
+備份時間電腦沒開，下次開機後自動補做。
+• 備份位置：backups\auto\（預設保留最近 10 份）
+• 附件備份：放在 backups\auto\uploads-mirror，只複製新增或修改過的檔案
+• 外接裝置：可在系統設定指定外接硬碟或 NAS，每次備份會把資料庫與附件一起存一份
+• 手動備份：系統設定的「立即備份」，或點兩下 scripts\backup-now.bat
+• 還原資料：詳見 RESTORE-GUIDE-Windows.txt（系統設定的「還原說明」按鈕也能開啟）
 
 ================================================================
 【版本更新】
 ================================================================
-1. 系統首頁右上角「Check for Updates」→ 顯示目前版本與最新版本
-2. 有新版本時，在伺服器點兩下 scripts\UPDATE-JIG-NETWORK-APP.bat
-   → 自動備份資料、下載新版本、重新啟動
-   ✅ 更新前會自動備份資料庫與檔案；治具記錄、授權、上傳檔案、
-      以及您改過的 port 與資料庫設定全部保留
+v1.3.1 起支援線上更新：有新版本時，在伺服器點兩下
+  scripts\UPDATE-JIG-NETWORK-APP.bat
+即可自動備份、下載、更新並重新啟動，設定、授權、附件與資料全部保留。
+詳細步驟與注意事項見 UPDATE-GUIDE-Windows.txt。
+（v1.3.0 以前的版本需先依該說明手動升級一次）
 
 ================================================================
 【問題聯絡】

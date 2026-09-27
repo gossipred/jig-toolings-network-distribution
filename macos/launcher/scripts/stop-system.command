@@ -20,6 +20,7 @@ for port in $PORTS; do
     OTHER="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null || true)"
     if [ -n "$PIDS" ]; then
         FOUND=1
+        jig_backup_before_stop "$port" "$PACKAGE_DIR"
         kill $PIDS 2>/dev/null
         sleep 3
         STILL="$(jig_java_pids_on_port "$port")"

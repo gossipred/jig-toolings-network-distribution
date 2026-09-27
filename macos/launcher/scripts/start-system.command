@@ -121,6 +121,7 @@ if [ -n "$RUN_PORT" ] && [ "$RUN_PORT" != "$JIG_PORT" ]; then
     OLD_PIDS="$(jig_java_pids_on_port "$RUN_PORT")"
     if [ -n "$OLD_PIDS" ]; then
         echo "[INFO] The system is still running on the previous port $RUN_PORT. Stopping it..."
+        jig_backup_before_stop "$RUN_PORT" "$PACKAGE_DIR"
         kill $OLD_PIDS 2>/dev/null; sleep 3
         OLD_PIDS="$(jig_java_pids_on_port "$RUN_PORT")"; [ -n "$OLD_PIDS" ] && kill -9 $OLD_PIDS 2>/dev/null
     fi

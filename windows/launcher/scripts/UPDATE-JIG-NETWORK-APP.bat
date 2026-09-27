@@ -1,14 +1,22 @@
 @echo off
 :: The update replaces files in scripts\, including this one. cmd reads a batch
 :: file line by line while it runs, so run from a temporary copy instead.
+::
+:: --auto (used by "Update now" on the web page): no questions, no pauses,
+:: result written to logs\last-update.txt, system restarted in every case
+:: where the old or new version can run.
 if /i not "%~1"=="--run" (
     copy /Y "%~f0" "%TEMP%\jig-updater-run.bat" >nul
-    "%TEMP%\jig-updater-run.bat" --run "%~dp0"
+    "%TEMP%\jig-updater-run.bat" --run "%~dp0" %1
     exit /b
 )
 setlocal enabledelayedexpansion
 
 set "SCRIPT_DIR=%~2"
+set "AUTO="
+if /i "%~3"=="--auto" set "AUTO=1"
+set "PAUSE=pause"
+if defined AUTO set "PAUSE=ver >nul"
 for %%d in ("%SCRIPT_DIR%..") do set "PACKAGE_DIR=%%~fd"
 set "APP_DIR=%PACKAGE_DIR%\app"
 set "BACKUP_BASE=%PACKAGE_DIR%\backups"
@@ -32,7 +40,7 @@ if "%CURRENT_VERSION%"=="" (
     echo [ERROR] Cannot read current version from:
     echo         %APP_DIR%\application.properties
     echo.
-    pause
+    %PAUSE%
     exit /b 1
 )
 
@@ -64,12 +72,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 
 if not exist "%TEMP%\jig-latest-info.txt" (
     echo [ERROR] Update check failed. No response from server.
-    pause
+    %PAUSE%
     exit /b 1
 )
 
 for /f "usebackq tokens=1* delims==" %%k in ("%TEMP%\jig-latest-info.txt") do (
-    if "%%k"=="ERROR"          ( echo [ERROR] %%l & del "%TEMP%\jig-latest-info.txt" & pause & exit /b 1 )
+    if "%%k"=="ERROR"          ( echo [ERROR] %%l & del "%TEMP%\jig-latest-info.txt" & %PAUSE% & exit /b 1 )
     if "%%k"=="LATEST_VERSION" ( set "LATEST_VERSION=%%l" )
     if "%%k"=="RELEASE_DATE"   ( set "RELEASE_DATE=%%l" )
     if "%%k"=="NOTES_URL"      ( set "NOTES_URL=%%l" )
@@ -80,7 +88,7 @@ del "%TEMP%\jig-latest-info.txt" >nul 2>&1
 
 if "%LATEST_VERSION%"=="" (
     echo [ERROR] Could not parse version information.
-    pause
+    %PAUSE%
     exit /b 1
 )
 
@@ -89,7 +97,7 @@ if not errorlevel 1 (
     echo System is up to date.
     echo Installed version: %CURRENT_VERSION%
     echo.
-    pause
+    %PAUSE%
     exit /b 0
 )
 
@@ -109,11 +117,15 @@ echo [WARNING] The system stops during the update.
 echo           LAN users will be disconnected for a few minutes.
 echo.
 set "CONFIRM="
-set /p CONFIRM=Proceed with update? (Y to continue / any other key to cancel): 
+if defined AUTO (
+    set "CONFIRM=Y"
+) else (
+    set /p CONFIRM=Proceed with update? ^(Y to continue / any other key to cancel^): 
+)
 if /i not "%CONFIRM%"=="Y" (
     echo.
     echo Update cancelled.
-    pause
+    %PAUSE%
     exit /b 0
 )
 
@@ -140,12 +152,30 @@ if exist "%PACKAGE_DIR%\logs\running-port.txt" set /p RUN_PORT=<"%PACKAGE_DIR%\l
 if defined RUN_PORT for /f "tokens=1" %%p in ("!RUN_PORT!") do if not "%%p"=="%JIG_PORT%" set "PORTS=%JIG_PORT% %%p"
 echo [2/5] Stopping the running system (port %PORTS%)...
 for %%p in (%PORTS%) do (
+    if exist "%SCRIPT_DIR%jig-backup-before-stop.bat" call "%SCRIPT_DIR%jig-backup-before-stop.bat" %%p
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%%p .*LISTENING" 2^>nul') do (
         tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
         if not errorlevel 1 taskkill /PID %%a /F >nul 2>&1
     )
 )
 timeout /t 3 /nobreak >nul
+rem Still running = started "as administrator"; its files are locked, so stop here.
+set "STILL_RUNNING="
+for %%p in (%PORTS%) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%%p .*LISTENING" 2^>nul') do (
+        tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
+        if not errorlevel 1 set "STILL_RUNNING=%%a"
+    )
+)
+if defined STILL_RUNNING (
+    echo.
+    echo [ERROR] The system could not be stopped ^(process %STILL_RUNNING%^); it was started
+    echo         as administrator. Nothing was changed.
+    echo         Right-click UPDATE-JIG-NETWORK-APP.bat and choose "Run as administrator".
+    echo.
+    %PAUSE%
+    exit /b 1
+)
 echo [2/5] System stopped.
 
 :: -- Phase 3: Download, verify and apply the new version ----------
@@ -164,25 +194,43 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
     -BackupDir   "%BACKUP_DIR%" ^
     -ExpectedSha "%EXPECTED_SHA256%"
 set "UPDATE_RESULT=%errorlevel%"
+set "RESULT_FILE=%PACKAGE_DIR%\logs\last-update.txt"
+if not exist "%PACKAGE_DIR%\logs" mkdir "%PACKAGE_DIR%\logs"
 
 if "%UPDATE_RESULT%"=="1" (
+    >"%RESULT_FILE%" echo FAILED_NOCHANGE;%CURRENT_VERSION%;%LATEST_VERSION%;%TIMESTAMP%;Download or verification failed. Nothing was changed.
     echo.
     echo [ERROR] Download or verification failed. Nothing was changed.
-    echo         Start the system again with START-JIG-NETWORK-APP.bat.
+    echo         Restarting the current version...
+    start "" "%PACKAGE_DIR%\START-JIG-NETWORK-APP.bat"
     echo.
-    pause
+    %PAUSE%
+    exit /b 1
+)
+if "%UPDATE_RESULT%"=="3" (
+    >"%RESULT_FILE%" echo ROLLED_BACK;%CURRENT_VERSION%;%LATEST_VERSION%;%TIMESTAMP%;The update failed and version %CURRENT_VERSION% was restored.
+    echo.
+    echo [ERROR] The update failed. Version %CURRENT_VERSION% and its database were restored.
+    echo         Restarting the previous version...
+    start "" "%PACKAGE_DIR%\START-JIG-NETWORK-APP.bat"
+    echo         Details: see the messages above. Backup: %BACKUP_DIR%
+    echo.
+    %PAUSE%
     exit /b 1
 )
 if not "%UPDATE_RESULT%"=="0" (
+    >"%RESULT_FILE%" echo FAILED;%CURRENT_VERSION%;%LATEST_VERSION%;%TIMESTAMP%;The update stopped part-way and could not be undone automatically.
     echo.
-    echo [ERROR] The update stopped part-way. Your backup is in:
+    echo [ERROR] The update stopped part-way and could not be undone automatically.
+    echo         Your backup is in:
     echo         %BACKUP_DIR%
     echo         Please send a screenshot of this window to gossipred5598@gmail.com
     echo         before starting the system again.
     echo.
-    pause
+    %PAUSE%
     exit /b 1
 )
+>"%RESULT_FILE%" echo SUCCESS;%CURRENT_VERSION%;%LATEST_VERSION%;%TIMESTAMP%;Updated from %CURRENT_VERSION% to %LATEST_VERSION%.
 
 echo [3/5] New version installed.
 
@@ -198,5 +246,5 @@ echo   Backup location: backups\update-backup-%TIMESTAMP%
 echo.
 echo The system is restarting. Please wait for the browser to open.
 echo.
-pause
+%PAUSE%
 exit /b 0

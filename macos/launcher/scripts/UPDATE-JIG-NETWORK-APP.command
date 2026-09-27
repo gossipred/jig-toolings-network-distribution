@@ -5,8 +5,15 @@
 # Standalone on purpose (no jig-port.sh), so it can be copied into an older
 # installation to upgrade it. macOS ships bash 3.2 — no bash 4 syntax.
 
+# --auto (used by "Update now" on the web page): no questions, no pauses,
+# result written to logs/last-update.txt, system restarted whenever the old or
+# new version can run.
+
 main() {
 set -u
+AUTO=0
+[ "${1:-}" = "--auto" ] && AUTO=1
+pause_close() { [ "$AUTO" = "1" ] || read -r -p "Press Enter to close..."; }
 cd "$(dirname "$0")"
 
 SCRIPT_DIR="$(pwd)"
@@ -30,7 +37,7 @@ if [ -z "$CURRENT_VERSION" ]; then
     echo "[ERROR] Cannot read current version from:"
     echo "        $APP_DIR/application.properties"
     echo
-    read -r -p "Press Enter to close..."
+    pause_close
     return 1
 fi
 
@@ -41,7 +48,7 @@ echo
 LATEST_JSON="$(curl -s -m 10 "$UPDATE_URL" 2>/dev/null)"
 if [ -z "$LATEST_JSON" ]; then
     echo "[ERROR] Update check failed. No response from server."
-    read -r -p "Press Enter to close..."
+    pause_close
     return 1
 fi
 
@@ -58,7 +65,7 @@ rm -f "$JSON_FILE"
 
 if [ -z "$LATEST_VERSION" ]; then
     echo "[ERROR] Could not parse version information."
-    read -r -p "Press Enter to close..."
+    pause_close
     return 1
 fi
 
@@ -75,7 +82,7 @@ if ! version_gt "$LATEST_VERSION" "$CURRENT_VERSION"; then
     echo "System is up to date."
     echo "Installed version: $CURRENT_VERSION"
     echo
-    read -r -p "Press Enter to close..."
+    pause_close
     return 0
 fi
 
@@ -93,11 +100,15 @@ echo
 echo "[WARNING] The system stops during the update."
 echo "          LAN users will be disconnected for a few minutes."
 echo
-read -r -p "Proceed with update? (y to continue / any other key to cancel): " CONFIRM
+if [ "$AUTO" = "1" ]; then
+    CONFIRM=y
+else
+    read -r -p "Proceed with update? (y to continue / any other key to cancel): " CONFIRM
+fi
 if [ "$(printf '%s' "$CONFIRM" | tr '[:upper:]' '[:lower:]')" != "y" ]; then
     echo
     echo "Update cancelled."
-    read -r -p "Press Enter to close..."
+    pause_close
     return 0
 fi
 
@@ -116,6 +127,14 @@ PORTS="$JIG_PORT"
 RUN_PORT="$(tr -d '[:space:]' < "$PACKAGE_DIR/logs/running-port.txt" 2>/dev/null)"
 case "$RUN_PORT" in ''|*[!0-9]*) ;; *) [ "$RUN_PORT" != "$JIG_PORT" ] && PORTS="$JIG_PORT $RUN_PORT" ;; esac
 echo "[2/5] Stopping the running system (port $PORTS)..."
+TOKEN_FILE="$PACKAGE_DIR/logs/.internal-token"
+for port in $PORTS; do
+    if [ -f "$TOKEN_FILE" ] && [ -n "$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null)" ]; then
+        echo "  Checking today's backup before stopping..."
+        curl -s -m 900 -X POST -H "X-Jig-Token: $(tr -d '[:space:]' < "$TOKEN_FILE")" \
+            "http://127.0.0.1:$port/internal/backup/before-stop" | sed 's/^/    /'
+    fi
+done
 for port in $PORTS; do
     for pid in $(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null); do
         ps -p "$pid" -o comm= 2>/dev/null | grep -qi java && kill "$pid" 2>/dev/null
@@ -137,23 +156,38 @@ mkdir -p "$DOWNLOAD_DIR"
 
 bash "$SCRIPT_DIR/update-download.sh" "$DOWNLOAD_ZIP_URL" "$DOWNLOAD_DIR" "$PACKAGE_DIR" "$BACKUP_DIR" "$EXPECTED_SHA256"
 RESULT=$?
+RESULT_FILE="$PACKAGE_DIR/logs/last-update.txt"
+mkdir -p "$PACKAGE_DIR/logs"
 if [ "$RESULT" -eq 1 ]; then
+    echo "FAILED_NOCHANGE;$CURRENT_VERSION;$LATEST_VERSION;$TIMESTAMP;Download or verification failed. Nothing was changed." > "$RESULT_FILE"
     echo
     echo "[ERROR] Download or verification failed. Nothing was changed."
-    echo "        Start the system again with START-JIG-NETWORK-APP.command."
+    echo "        Restarting the current version..."
+    open "$PACKAGE_DIR/START-JIG-NETWORK-APP.command"
     echo
-    read -r -p "Press Enter to close..."
+    pause_close
+    return 1
+elif [ "$RESULT" -eq 3 ]; then
+    echo "ROLLED_BACK;$CURRENT_VERSION;$LATEST_VERSION;$TIMESTAMP;The update failed and version $CURRENT_VERSION was restored." > "$RESULT_FILE"
+    echo
+    echo "[ERROR] The update failed. Version $CURRENT_VERSION and its database were restored."
+    echo "        Restarting the previous version..."
+    open "$PACKAGE_DIR/START-JIG-NETWORK-APP.command"
+    echo
+    pause_close
     return 1
 elif [ "$RESULT" -ne 0 ]; then
+    echo "FAILED;$CURRENT_VERSION;$LATEST_VERSION;$TIMESTAMP;The update stopped part-way and could not be undone automatically." > "$RESULT_FILE"
     echo
-    echo "[ERROR] The update stopped part-way. Your backup is in:"
-    echo "        $BACKUP_DIR"
+    echo "[ERROR] The update stopped part-way and could not be undone automatically."
+    echo "        Your backup is in: $BACKUP_DIR"
     echo "        Please send a screenshot of this window to gossipred5598@gmail.com"
     echo "        before starting the system again."
     echo
-    read -r -p "Press Enter to close..."
+    pause_close
     return 1
 fi
+echo "SUCCESS;$CURRENT_VERSION;$LATEST_VERSION;$TIMESTAMP;Updated from $CURRENT_VERSION to $LATEST_VERSION." > "$RESULT_FILE"
 echo "[3/5] New version installed."
 
 echo "[4/5] Restarting the system..."
@@ -166,7 +200,7 @@ echo "  Backup location: backups/update-backup-$TIMESTAMP"
 echo
 echo "The system is restarting. Please wait for the browser to open."
 echo
-read -r -p "Press Enter to close..."
+pause_close
 return 0
 }
 

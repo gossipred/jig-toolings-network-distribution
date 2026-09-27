@@ -1,6 +1,6 @@
 ﻿================================================================
   Jig & Toolings Management System
-  Windows Network Edition - Installation Guide  v1.3.1
+  Windows Network Edition - Installation Guide  v1.4.0
   * Please read this guide BEFORE installing to avoid most errors
   中文版：INSTALL-GUIDE-Windows-zh-TW.txt
 ================================================================
@@ -9,8 +9,8 @@
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 Files you need (choose one method):
-  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.3.1.exe
-  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.3.1.zip
+  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.4.0.exe
+  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.4.0.zip
 
 XAMPP is also available from the official website:
 https://www.apachefriends.org/download.html
@@ -37,9 +37,9 @@ STEP 1: Install XAMPP (MySQL database - required for both methods, once)
    - Method B: click "Start" on the MySQL row; green means it is running
 
 ================================================================
-STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.3.1.exe
+STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.4.0.exe
 ================================================================
-1. Double-click "JigToolingsSetup-1.3.1.exe"
+1. Double-click "JigToolingsSetup-1.4.0.exe"
    If "Windows protected your PC" appears -> "More info" -> "Run anyway"
 2. Click "Next"; the default folder is C:\JigSystem, or choose another (e.g. D:\JigSystem)
    !! Do not choose C:\Program Files - the system writes data into its own folder
@@ -104,19 +104,29 @@ STEP 4: Free trial and license
    Administrator (right-click -> Run as administrator)
 
 ================================================================
-[DAILY BACKUP]
+[BACKUP AND RESTORE]
 ================================================================
-Double-click scripts\backup-now.bat; backups are saved in the backups\ folder.
-Recommended once a day before leaving work.
+The database and the uploaded attachments (photos, drawings) are backed up
+automatically every day (18:00 by default; change
+it in System Settings -> Data Backup). If today's backup is missing when the
+system stops, it backs up first; if the computer was off at backup time, the
+backup runs after the next start.
+- Location: backups\auto\ (the latest 10 backups are kept by default)
+- Attachments: kept in backups\auto\uploads-mirror; only new or changed files are copied
+- External drive: set a USB drive or NAS folder in System Settings; every
+  backup saves both the database and the attachments there
+- Manual backup: "Back up now" in System Settings, or scripts\backup-now.bat
+- Restoring: see RESTORE-GUIDE-Windows.txt (also opened by the "Restore guide"
+  button in System Settings)
 
 ================================================================
 [UPDATES]
 ================================================================
-1. "Check for Updates" (top right of the home page) shows current/latest version
-2. If a new version exists, double-click scripts\UPDATE-JIG-NETWORK-APP.bat
-   on the server -> backs up data, downloads the new version, restarts
-   The database and files are backed up first. Jig records, license,
-   uploaded files, and your port and database settings are all kept
+From v1.3.1 the system updates online: when a new version is available,
+double-click scripts\UPDATE-JIG-NETWORK-APP.bat on the server.
+It backs up, downloads, updates and restarts automatically; settings, license,
+attachments and data are all kept. See UPDATE-GUIDE-Windows.txt for details.
+(Versions up to v1.3.0 need a one-time manual upgrade described there.)
 
 ================================================================
 [CONTACT]

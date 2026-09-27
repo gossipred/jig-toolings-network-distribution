@@ -9,6 +9,10 @@ param(
     [string]$ExpectedSha = ""
 )
 
+# Windows PowerShell 5.1 slows Invoke-WebRequest down many times over while it
+# draws its progress bar; a 100 MB package took minutes.
+$ProgressPreference = "SilentlyContinue"
+
 $ZipPath = Join-Path $DownloadDir "jig-update.zip"
 $ExtractDir = Join-Path $DownloadDir "extracted"
 
@@ -41,7 +45,10 @@ if ($ExpectedSha -ne "" -and $ExpectedSha -ne $PLACEHOLDER) {
 Write-Host "    Extracting..."
 try {
     if (Test-Path $ExtractDir) { Remove-Item $ExtractDir -Recurse -Force }
-    Expand-Archive -Path $ZipPath -DestinationPath $ExtractDir -Force
+    # Not Expand-Archive: it decodes file names with the Windows code page
+    # unless the zip flags them as UTF-8, and then fails on non-ASCII names.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::ExtractToDirectory($ZipPath, $ExtractDir, [Text.Encoding]::UTF8)
 } catch {
     Write-Host "[ERROR] Extraction failed: $_"
     exit 1

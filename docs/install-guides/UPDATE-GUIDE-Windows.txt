@@ -1,0 +1,149 @@
+﻿================================================================
+  治具及模具管理系統 — 線上更新說明（Windows）
+  Jig & Toolings Management System — Online Update (Windows)
+  適用版本 / For version: v1.3.1 以上 / and later
+================================================================
+
+中文說明在前，English follows below.
+
+################################################################
+  中文
+################################################################
+
+【什麼是線上更新？】
+有新版本時，在伺服器電腦上點兩下一個檔案，系統就會自動：
+  ① 備份資料庫、授權、上傳的附件、程式與設定
+  ② 停止系統（今天還沒備份的話，會先做每日備份）
+  ③ 下載新版本並檢查檔案是否完整
+  ④ 更新程式、腳本、說明文件
+  ⑤ 保留您的設定（port、資料庫密碼等），並補上新版本需要的設定
+  ⑥ 自動套用資料庫結構的變更
+  ⑦ 重新啟動系統
+全程約 3–5 分鐘，不需要重新安裝，資料不會遺失。
+
+【怎麼知道有新版本？】
+• 啟動系統時，黑色視窗會顯示「*** UPDATE AVAILABLE ***」
+• 或登入後，首頁右上角點「Check for Updates（檢查系統更新）」
+
+────────────────────────────────────────
+更新步驟
+────────────────────────────────────────
+1. 選在下班或休息時段（更新時系統會停止幾分鐘，其他電腦暫時無法連線）
+2. 在「伺服器電腦」打開安裝資料夾（例如 C:\JigSystem）→ scripts
+3. 點兩下「UPDATE-JIG-NETWORK-APP.bat」
+4. 畫面顯示目前版本與最新版本，輸入 Y 按 Enter 開始
+5. 等待畫面依序顯示 [1/5] 到 [5/5]
+6. 看到「Update complete」後，系統會自動重新啟動並開啟瀏覽器
+7. 登入後，首頁右上角「Check for Updates」應顯示「System is up to date」
+
+※ 伺服器需要能連上網際網路（下載新版本用）。
+※ 若出現藍色「Windows 已保護您的電腦」，按「其他資訊」→「仍要執行」。
+
+────────────────────────────────────────
+更新前的備份放在哪裡？
+────────────────────────────────────────
+安裝資料夾\backups\update-backup-日期時間\
+  database-web_fixture_management.sql   資料庫
+  app\  scripts\  license\  uploads\     程式、腳本、授權、附件
+
+────────────────────────────────────────
+更新失敗怎麼辦？
+────────────────────────────────────────
+• 顯示「Download or verification failed. Nothing was changed.」
+  → 系統完全沒有被更動（多半是網路問題），重新啟動系統即可，稍後再試。
+• 顯示「The update stopped part-way」
+  → 請先不要啟動系統，截圖整個視窗寄給 gossipred5598@gmail.com，
+    我們會依照 backups\update-backup-日期時間\ 的備份協助您恢復。
+
+────────────────────────────────────────
+從 v1.3.0 或更早版本升級（只需要一次）
+────────────────────────────────────────
+v1.3.0 以前的更新程式只會換主程式，請先升級一次，之後就能線上更新：
+• 當初用安裝精靈安裝：執行最新的 JigToolingsSetup-x.x.x.exe，
+  安裝資料夾選原本的資料夾即可（設定與資料保留）。
+• 當初用 zip 安裝：從最新的 zip 的 scripts 資料夾，把
+  UPDATE-JIG-NETWORK-APP.bat 和 update-download.ps1 複製到原本的 scripts
+  資料夾（取代），再執行 UPDATE-JIG-NETWORK-APP.bat。
+下載頁：https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+────────────────────────────────────────
+什麼情況不能線上更新？
+────────────────────────────────────────
+極少數變更（例如需要換新版 XAMPP）無法線上完成，
+這種情況會在版本說明中特別註明，並提供手動步驟。
+
+問題聯絡：gossipred5598@gmail.com
+
+################################################################
+  ENGLISH
+################################################################
+
+[WHAT IS AN ONLINE UPDATE?]
+When a new version is available, double-click one file on the server and
+the system automatically:
+  (1) backs up the database, license, uploaded attachments, program and settings
+  (2) stops the system (running today's daily backup first if it is missing)
+  (3) downloads the new version and checks the download is complete
+  (4) updates the program, scripts and documents
+  (5) keeps your settings (port, database password...) and adds new ones
+  (6) applies database structure changes
+  (7) restarts the system
+It takes about 3-5 minutes. No reinstall is needed and no data is lost.
+
+[HOW DO I KNOW A NEW VERSION IS AVAILABLE?]
+- When the system starts, the console window shows "*** UPDATE AVAILABLE ***"
+- Or after signing in, click "Check for Updates" at the top right of the home page
+
+----------------------------------------
+Update steps
+----------------------------------------
+1. Choose a quiet time (the system stops for a few minutes; other computers
+   cannot connect during the update)
+2. On the SERVER open the installation folder (e.g. C:\JigSystem) -> scripts
+3. Double-click "UPDATE-JIG-NETWORK-APP.bat"
+4. The current and latest versions are shown. Type Y and press Enter
+5. Wait while [1/5] to [5/5] are shown
+6. After "Update complete" the system restarts and opens the browser
+7. Sign in; "Check for Updates" should show "System is up to date"
+
+* The server needs internet access to download the new version.
+* If "Windows protected your PC" appears, click "More info" -> "Run anyway".
+
+----------------------------------------
+Where is the backup made before the update?
+----------------------------------------
+<install folder>\backups\update-backup-DATE-TIME\
+  database-web_fixture_management.sql   database
+  app\  scripts\  license\  uploads\     program, scripts, license, attachments
+
+----------------------------------------
+If the update fails
+----------------------------------------
+- "Download or verification failed. Nothing was changed."
+  -> Nothing was changed (usually a network problem). Start the system again
+     and retry later.
+- "The update stopped part-way"
+  -> Do not start the system yet. Send a screenshot of the window to
+     gossipred5598@gmail.com; we will help you recover from
+     backups\update-backup-DATE-TIME\.
+
+----------------------------------------
+Upgrading from v1.3.0 or earlier (once)
+----------------------------------------
+Updaters before v1.3.1 only replaced the program. Upgrade once, then online
+updates work:
+- Installed with the setup wizard: run the latest JigToolingsSetup-x.x.x.exe
+  and choose the existing folder (settings and data are kept).
+- Installed from the zip: from the latest zip's scripts folder, copy
+  UPDATE-JIG-NETWORK-APP.bat and update-download.ps1 over the ones in your
+  scripts folder, then run UPDATE-JIG-NETWORK-APP.bat.
+Downloads: https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+----------------------------------------
+When is an online update not possible?
+----------------------------------------
+Rarely (for example when a newer XAMPP is required) a change cannot be made
+online. The release notes will say so and give manual steps.
+
+Contact: gossipred5598@gmail.com
+================================================================

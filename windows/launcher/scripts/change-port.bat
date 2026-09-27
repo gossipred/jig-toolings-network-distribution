@@ -120,6 +120,7 @@ if defined RUNNING_PID (
     set "RS="
     set /p RS=The system is running on the old port %OLD_PORT%. Restart it now on port !NEW_PORT!? (Y/N): 
     if /i "!RS!"=="Y" (
+        call "%SCRIPT_DIR%jig-backup-before-stop.bat" %OLD_PORT%
         taskkill /PID !RUNNING_PID! /F >nul
         timeout /t 2 /nobreak >nul
         start "" "%PACKAGE_DIR%\START-JIG-NETWORK-APP.bat"

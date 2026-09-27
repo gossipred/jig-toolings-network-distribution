@@ -21,11 +21,25 @@ for %%p in (%PORTS%) do (
         if errorlevel 1 (
             echo [WARN] Port %%p is used by process %%a, which is not this system. Not stopped.
         ) else (
+            call "%SCRIPT_DIR%jig-backup-before-stop.bat" %%p
             taskkill /PID %%a /F
         )
     )
 )
 if not defined FOUND echo The system is not running.
+
+rem A system started "as administrator" cannot be stopped from a normal window.
+timeout /t 2 /nobreak >nul
+for %%p in (%PORTS%) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%%p .*LISTENING"') do (
+        tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
+        if not errorlevel 1 (
+            echo.
+            echo [ERROR] The system is still running ^(process %%a^). It was started as administrator.
+            echo         Right-click stop-system.bat and choose "Run as administrator".
+        )
+    )
+)
 
 echo Done.
 pause

@@ -7,7 +7,10 @@
 #      database password...), take the new app.version, add new settings
 #   4. Apply database migrations that have not run yet (schema_migrations)
 # Usage: apply-update.sh <new_package_dir> <installed_package_dir> <backup_dir>
-# Exit codes: 0 = done, 1 = nothing changed, 2 = failed part-way.
+# If a step after the database backup fails, the previous version is put back
+# (app/ and scripts/ from the updater's backup, database from the dump).
+# Exit codes: 0 = done, 1 = nothing changed, 2 = failed part-way and could not
+# be undone, 3 = failed and the previous version was restored.
 # Only macOS built-ins (bash 3.2, awk, rsync) — no python3 on a clean Mac.
 # JIG_MYSQL_BIN overrides the MySQL bin folder (for testing).
 
@@ -69,7 +72,29 @@ if ! "$MYSQL_BIN/mysqldump" -u "$DB_USER" --default-character-set=utf8mb4 --sing
 fi
 echo "    Database backup: $DUMP"
 
-fail() { echo "[ERROR] $1"; echo "        Backup of files and database: $BACKUP_DIR"; return 2; }
+# Puts the previous version back; returns 3 when that worked, 2 when it did not.
+fail() {
+    echo "[ERROR] $1"
+    echo "    Restoring the previous version..."
+    local ok=1 name
+    for name in app scripts; do
+        if [ -d "$BACKUP_DIR/$name" ]; then
+            rsync -a -I "$BACKUP_DIR/$name/" "$PKG/$name/" || ok=0
+        else
+            ok=0
+        fi
+    done
+    if ! sql "$DB_NAME" < "$DUMP" > /dev/null 2>&1; then
+        echo "[ERROR] Could not restore the database from $DUMP"
+        ok=0
+    fi
+    echo "        Backup of files and database: $BACKUP_DIR"
+    if [ "$ok" = "1" ]; then
+        echo "    Previous version restored."
+        return 3
+    fi
+    return 2
+}
 
 # -- 2. Program files ----------------------------------------------------
 echo "    Replacing program files..."
@@ -80,14 +105,23 @@ for item in "$SRC"/* ; do
         [ "$name" = "runtime" ] && rm -rf "$PKG/runtime"
         mkdir -p "$PKG/$name"
         if [ "$name" = "app" ]; then
-            rsync -a -I --exclude application.properties "$item/" "$PKG/$name/" || { fail "Could not copy $name/"; return 2; }
+            rsync -a -I --exclude application.properties "$item/" "$PKG/$name/" || { fail "Could not copy $name/"; return $?; }
         else
-            rsync -a -I "$item/" "$PKG/$name/" || { fail "Could not copy $name/"; return 2; }
+            rsync -a -I "$item/" "$PKG/$name/" || { fail "Could not copy $name/"; return $?; }
         fi
     else
-        cp -p "$item" "$PKG/$name" || { fail "Could not copy $name"; return 2; }
+        cp -p "$item" "$PKG/$name" || { fail "Could not copy $name"; return $?; }
     fi
 done
+
+# Files that older versions had but this one replaces (e.g. renamed guides)
+if [ -f "$SRC/scripts/obsolete-files.txt" ]; then
+    while IFS= read -r rel || [ -n "$rel" ]; do
+        rel="$(printf '%s' "$rel" | tr -d '\r')"
+        case "$rel" in ''|'#'*|*..*|license/*|uploads/*|logs/*|backups/*) continue ;; esac
+        [ -f "$PKG/$rel" ] && rm -f "$PKG/$rel"
+    done < "$SRC/scripts/obsolete-files.txt"
+fi
 
 # -- 3. Settings merge -----------------------------------------------------
 echo "    Updating settings (your port and database settings are kept)..."
@@ -99,13 +133,13 @@ awk -v ver="$NEW_VERSION" '
     END {
         for (i = 1; i <= n; i++) { l = lines[i]; if (l ~ /^[ \t]*app\.version[ \t]*=/) l = "app.version=" ver; print l }
         if (m > 0) { print ""; print "# Added by update to v" ver; for (i = 1; i <= m; i++) print add[i] }
-    }' "$PROPS" "$NEW_PROPS" > "$PROPS.tmp" && mv "$PROPS.tmp" "$PROPS" || { fail "Could not update settings"; return 2; }
+    }' "$PROPS" "$NEW_PROPS" > "$PROPS.tmp" && mv "$PROPS.tmp" "$PROPS" || { fail "Could not update settings"; return $?; }
 
 # -- 4. Database migrations ----------------------------------------------
 HAS_TABLE="$(sql -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='schema_migrations'" 2>&1)" \
-    || { fail "Cannot read the database: $HAS_TABLE"; return 2; }
+    || { fail "Cannot read the database: $HAS_TABLE"; return $?; }
 sql -e "CREATE TABLE IF NOT EXISTS \`$DB_NAME\`.schema_migrations (filename VARCHAR(255) NOT NULL PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)" \
-    || { fail "Cannot create schema_migrations"; return 2; }
+    || { fail "Cannot create schema_migrations"; return $?; }
 if [ "$HAS_TABLE" != "1" ]; then
     # First run of this mechanism. Migrations dated up to 2026-05-23 predate
     # every customer package: its schema.sql already contains them.
@@ -123,7 +157,7 @@ for f in "$PKG"/database/migration-*.sql; do   # glob expands in sorted order; p
     fname="$(basename "$f")"
     if printf '%s\n' "$APPLIED" | grep -qx "$fname"; then continue; fi
     echo "    Applying database change: $fname"
-    ERR="$(sql "$DB_NAME" < "$f" 2>&1)" || { fail "Database change $fname failed: $ERR"; return 2; }
+    ERR="$(sql "$DB_NAME" < "$f" 2>&1)" || { fail "Database change $fname failed: $ERR"; return $?; }
     sql -e "INSERT INTO \`$DB_NAME\`.schema_migrations (filename) VALUES ('$fname')"
 done
 

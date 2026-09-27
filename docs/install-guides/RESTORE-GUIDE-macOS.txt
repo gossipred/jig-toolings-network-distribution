@@ -1,0 +1,152 @@
+﻿================================================================
+  治具及模具管理系統 — 資料還原說明（macOS）
+  Jig & Toolings Management System — Restoring a Backup (macOS)
+  適用版本 / For version: v1.4.0 以上 / and later
+================================================================
+
+中文說明在前，English follows below.
+
+################################################################
+  中文
+################################################################
+
+【什麼時候需要還原？】
+• 資料被誤刪、誤改，想回到某一天的狀態
+• 電腦故障，重新安裝系統後要把資料找回來
+⚠️ 還原會把「目前的資料庫」整個換成備份當時的內容，
+   備份之後新增或修改的資料都會消失。還原前請先確認要選哪一份。
+
+【備份放在哪裡？】
+• 系統備份：mac-network-app/backups/auto/
+  檔名：jig-backup-日期_時間.zip，例如 jig-backup-2026-09-27_1800.zip
+• 外接裝置備份：在「系統設定 → 資料備份」設定的外接資料夾
+• 上傳的照片、圖檔：放在上述資料夾的 uploads-mirror 子資料夾
+
+────────────────────────────────────────
+方法一：用還原小工具（建議）
+────────────────────────────────────────
+1. 通知同事暫停使用系統（還原時系統會停止幾分鐘）
+2. 打開 mac-network-app → scripts，點兩下「restore-backup.command」
+   （若出現「無法確認開發者」，請參考安裝說明的【安全性提示】）
+3. 畫面列出最近的備份（最新的在最上面），輸入要還原的編號，按 Enter
+   ※ 要用外接裝置上的備份：畫面詢問時，把那個 zip 檔拖進終端機視窗，按 Enter
+4. 確認畫面輸入大寫 YES 才會開始（輸入其他內容會取消，什麼都不改）
+5. 小工具會自動：
+   ① 先把「目前的資料庫」另存到 backups/before-restore-日期時間.sql
+     （還原錯了也能退回）
+   ② 停止系統
+   ③ 還原資料庫
+6. 看到「[OK] Restore completed」後，點兩下 START-JIG-NETWORK-APP.command 重新啟動
+7. 登入確認資料是否正確
+
+────────────────────────────────────────
+上傳的照片、圖檔怎麼辦？
+────────────────────────────────────────
+• 一般情況（只有資料庫要還原）：不用處理，照片還在原本的 uploads 資料夾。
+• 電腦故障、uploads 資料夾不見了：
+  把 backups/auto/uploads-mirror（或外接裝置的 uploads-mirror）裡的全部內容，
+  複製到 mac-network-app 的 uploads 資料夾。
+  ※ uploads-mirror 是「目前最新」的檔案，不分日期。
+
+────────────────────────────────────────
+換到新電腦（或重新安裝）後還原
+────────────────────────────────────────
+1. 在新電腦照安裝說明安裝 XAMPP 與治具系統
+2. 把舊的備份 zip 複製到新電腦任何位置
+3. 執行新安裝的 scripts/restore-backup.command，詢問時把 zip 拖進終端機
+4. 依畫面輸入 YES 完成還原
+5. 把舊的 uploads-mirror 內容複製到新安裝的 uploads 資料夾
+6. 授權檔需要重新申請（授權綁定電腦）：
+   到 https://aurastudio.studio/license-center/ 登記新電腦的 Machine ID
+
+────────────────────────────────────────
+還原錯了想退回？
+────────────────────────────────────────
+還原前的資料存在 backups/before-restore-日期時間.sql。
+請聯絡我們協助還原：gossipred5598@gmail.com
+
+────────────────────────────────────────
+常見問題
+────────────────────────────────────────
+Q：畫面顯示「No backups found」？
+A：backups/auto 裡沒有備份。請確認自動備份有開啟，或在詢問時把外接裝置上的 zip 拖進終端機。
+
+Q：顯示「MySQL is not responding」？
+A：執行 scripts/setup-mysql-autostart.command 啟動 MySQL，再執行一次。
+
+問題聯絡：gossipred5598@gmail.com
+
+################################################################
+  ENGLISH
+################################################################
+
+[WHEN DO I NEED TO RESTORE?]
+- Data was deleted or changed by mistake and you want a previous day back
+- The computer failed and you reinstalled the system
+!! Restoring replaces the WHOLE current database with the backup. Anything
+   added or changed after that backup is lost. Choose the backup carefully.
+
+[WHERE ARE THE BACKUPS?]
+- System backups: mac-network-app/backups/auto/
+  File name: jig-backup-DATE_TIME.zip, e.g. jig-backup-2026-09-27_1800.zip
+- External drive backups: the folder set in System Settings -> Data Backup
+- Uploaded photos and drawings: the uploads-mirror folder inside the above
+
+----------------------------------------
+Method 1: Restore tool (recommended)
+----------------------------------------
+1. Ask colleagues to stop using the system (it stops for a few minutes)
+2. Open mac-network-app -> scripts, double-click "restore-backup.command"
+   (If macOS blocks it, see the SECURITY TIP in the installation guide.)
+3. Recent backups are listed (newest first). Type the number and press Enter
+   * To use a backup from an external drive: when asked, drag that zip
+     file into the Terminal window and press Enter
+4. Type YES in capitals to start (anything else cancels; nothing changes)
+5. The tool automatically:
+   (1) saves the CURRENT database to backups/before-restore-DATE-TIME.sql
+       (so a wrong restore can be undone)
+   (2) stops the system
+   (3) restores the database
+6. After "[OK] Restore completed", double-click START-JIG-NETWORK-APP.command
+7. Sign in and check the data
+
+----------------------------------------
+What about uploaded photos and drawings?
+----------------------------------------
+- Usual case (only the database is restored): nothing to do; the files are
+  still in the uploads folder.
+- Computer failure, uploads folder lost: copy everything from
+  backups/auto/uploads-mirror (or uploads-mirror on the external drive)
+  into mac-network-app's uploads folder.
+  * uploads-mirror holds the latest files, not per-date copies.
+
+----------------------------------------
+Restoring on a new computer (or after reinstalling)
+----------------------------------------
+1. Install XAMPP and the system on the new computer (see the install guide)
+2. Copy the backup zip to the new computer
+3. Run scripts/restore-backup.command of the new installation and drag
+   the zip into Terminal when asked
+4. Type YES to restore
+5. Copy the old uploads-mirror contents into the new uploads folder
+6. The license is bound to the computer, so request a new one with the new
+   Machine ID: contact gossipred5598@gmail.com
+
+----------------------------------------
+Undo a restore
+----------------------------------------
+The data from before the restore is in backups/before-restore-DATE-TIME.sql.
+Contact us and we will help: gossipred5598@gmail.com
+
+----------------------------------------
+FAQ
+----------------------------------------
+Q: "No backups found"?
+A: backups/auto is empty. Check that automatic backup is on, or drag a zip
+   from the external drive into Terminal when asked.
+
+Q: "MySQL is not responding"?
+A: Run scripts/setup-mysql-autostart.command to start MySQL, then run again.
+
+Contact: gossipred5598@gmail.com
+================================================================

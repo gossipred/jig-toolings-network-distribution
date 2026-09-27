@@ -78,7 +78,7 @@ echo ""
 # ── Step 3: Sync launcher scripts from distribution repo ─────────────────────
 echo "[3/5] Syncing launcher scripts from distribution repo..."
 cp "$LAUNCHER_DIR/START-JIG-NETWORK-APP.bat" "$PACKAGE_DIR/START-JIG-NETWORK-APP.bat"
-for f in "$LAUNCHER_DIR/scripts/"*.bat "$LAUNCHER_DIR/scripts/"*.ps1; do
+for f in "$LAUNCHER_DIR/scripts/"*.bat "$LAUNCHER_DIR/scripts/"*.ps1 "$LAUNCHER_DIR/scripts/"*.txt; do
     [ -f "$f" ] && cp "$f" "$PACKAGE_DIR/scripts/"
 done
 # cmd.exe misparses LF-only batch files (call :label / goto can land on the wrong
@@ -108,6 +108,16 @@ else
     echo "      [WARN] runtime/ not found at $RUNTIME_SRC — skipped"
 fi
 echo ""
+
+
+# Windows' built-in unzip (used by customers' existing updaters) fails on
+# non-ASCII file names in zips made on a Mac — keep every packaged name ASCII.
+BAD_NAMES="$(cd "$PACKAGE_DIR" && find . -not -path "./runtime/*" | LC_ALL=C grep '[^ -~]' || true)"
+if [ -n "$BAD_NAMES" ]; then
+    echo "[ERROR] Non-ASCII file names in the package (rename them):"
+    echo "$BAD_NAMES"
+    exit 1
+fi
 
 # ── Step 4: Create ZIP ────────────────────────────────────────────────────────
 echo "[4/5] Creating ZIP: $ZIP_NAME"

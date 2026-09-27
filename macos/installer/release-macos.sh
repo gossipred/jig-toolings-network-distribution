@@ -90,6 +90,16 @@ chmod +x "$PACKAGE_DIR/START-JIG-NETWORK-APP.command" "$PACKAGE_DIR"/scripts/*.c
 echo "[2.5] Launcher sync OK."
 echo ""
 
+
+# Windows' built-in unzip (used by customers' existing updaters) fails on
+# non-ASCII file names in zips made on a Mac — keep every packaged name ASCII.
+BAD_NAMES="$(cd "$PACKAGE_DIR" && find . -not -path "./runtime/*" | LC_ALL=C grep '[^ -~]' || true)"
+if [ -n "$BAD_NAMES" ]; then
+    echo "[ERROR] Non-ASCII file names in the package (rename them):"
+    echo "$BAD_NAMES"
+    exit 1
+fi
+
 # ── Step 3: Create ZIP ────────────────────────────────────────────────────────
 echo "[3/4] Creating ZIP: $ZIP_NAME"
 mkdir -p "$DIST_DIR"
