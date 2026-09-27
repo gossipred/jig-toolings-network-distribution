@@ -1,63 +1,84 @@
 #!/usr/bin/env bash
+# The update replaces the files in scripts/, including this one. bash reads a
+# script while it runs, so everything lives in main() and the last line calls
+# it and exits: bash has already read the whole file before anything changes.
+# Standalone on purpose (no jig-port.sh), so it can be copied into an older
+# installation to upgrade it. macOS ships bash 3.2 — no bash 4 syntax.
+
+main() {
 set -u
 cd "$(dirname "$0")"
 
 SCRIPT_DIR="$(pwd)"
-PACKAGE_DIR="$SCRIPT_DIR/.."
+PACKAGE_DIR="$(cd .. && pwd)"
 APP_DIR="$PACKAGE_DIR/app"
 BACKUP_BASE="$PACKAGE_DIR/backups"
 TMP_BASE="${TMPDIR:-/tmp}"
 DOWNLOAD_DIR="${TMP_BASE%/}/jig-update"
-UPDATE_URL="https://raw.githubusercontent.com/gossipred/jig-toolings-network-distribution/main/shared/latest.json"
+UPDATE_URL="${JIG_UPDATE_URL:-https://raw.githubusercontent.com/gossipred/jig-toolings-network-distribution/main/shared/latest.json}"
+
+JIG_PORT="$(grep -E '^[[:space:]]*server\.port[[:space:]]*=' "$APP_DIR/application.properties" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')"
+case "$JIG_PORT" in ''|*[!0-9]*) JIG_PORT=8080 ;; esac
 
 echo "============================================================"
 echo " Jig & Toolings Management System - Semi-Automatic Updater"
 echo "============================================================"
 echo
 
-# -- Phase 0: Read current version -----------------------------------
 CURRENT_VERSION="$(grep -E '^app\.version=' "$APP_DIR/application.properties" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')"
 if [ -z "$CURRENT_VERSION" ]; then
     echo "[ERROR] Cannot read current version from:"
     echo "        $APP_DIR/application.properties"
     echo
     read -r -p "Press Enter to close..."
-    exit 1
+    return 1
 fi
 
 echo "Installed version : $CURRENT_VERSION"
 echo "Checking server   : $UPDATE_URL"
 echo
 
-# -- Phase 0: Fetch latest.json and compare ---------------------------
 LATEST_JSON="$(curl -s -m 10 "$UPDATE_URL" 2>/dev/null)"
 if [ -z "$LATEST_JSON" ]; then
     echo "[ERROR] Update check failed. No response from server."
     read -r -p "Press Enter to close..."
-    exit 1
+    return 1
 fi
 
-LATEST_VERSION="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("latestVersion",""))' 2>/dev/null)"
-RELEASE_DATE="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("releaseDate",""))' 2>/dev/null)"
-NOTES_URL="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("notesUrl",""))' 2>/dev/null)"
-DOWNLOAD_ZIP_URL="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("platforms",{}).get("macos",{}).get("packageUrl",""))' 2>/dev/null)"
-EXPECTED_SHA256="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("platforms",{}).get("macos",{}).get("sha256",""))' 2>/dev/null)"
+# plutil reads JSON and is built into macOS (python3 is not, on a Mac without Xcode tools).
+JSON_FILE="$(mktemp)"
+printf '%s' "$LATEST_JSON" > "$JSON_FILE"
+json_get() { plutil -extract "$1" raw -o - "$JSON_FILE" 2>/dev/null; }
+LATEST_VERSION="$(json_get latestVersion)"
+RELEASE_DATE="$(json_get releaseDate)"
+NOTES_URL="$(json_get notesUrl)"
+DOWNLOAD_ZIP_URL="$(json_get platforms.macos.packageUrl)"
+EXPECTED_SHA256="$(json_get platforms.macos.sha256)"
+rm -f "$JSON_FILE"
 
 if [ -z "$LATEST_VERSION" ]; then
     echo "[ERROR] Could not parse version information."
     read -r -p "Press Enter to close..."
-    exit 1
+    return 1
 fi
 
-if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+# True when version $1 is newer than $2 (numeric, dot-separated).
+version_gt() {
+    local IFS=.; local a=($1) b=($2) i
+    for i in 0 1 2 3; do
+        [ "${a[i]:-0}" -gt "${b[i]:-0}" ] 2>/dev/null && return 0
+        [ "${a[i]:-0}" -lt "${b[i]:-0}" ] 2>/dev/null && return 1
+    done
+    return 1
+}
+if ! version_gt "$LATEST_VERSION" "$CURRENT_VERSION"; then
     echo "System is up to date."
     echo "Installed version: $CURRENT_VERSION"
     echo
     read -r -p "Press Enter to close..."
-    exit 0
+    return 0
 fi
 
-# -- Phase 1: Show update info and confirm -----------------------------
 echo "*** UPDATE AVAILABLE ***"
 echo
 echo "  Installed version : $CURRENT_VERSION"
@@ -65,68 +86,79 @@ echo "  Latest version    : $LATEST_VERSION"
 echo "  Release date      : $RELEASE_DATE"
 echo "  Release notes     : $NOTES_URL"
 echo
-echo "The following data will be backed up before the update:"
-echo "  license/  uploads/  logs/  app/application.properties"
+echo "Before updating, a backup is made of:"
+echo "  database, license/, uploads/, app/ (program + settings), scripts/"
+echo "Your settings (port, database password) are kept."
 echo
-echo "[WARNING] Stop the running system and update the JAR file."
-echo "          LAN users will be disconnected during the update."
+echo "[WARNING] The system stops during the update."
+echo "          LAN users will be disconnected for a few minutes."
 echo
 read -r -p "Proceed with update? (y to continue / any other key to cancel): " CONFIRM
 if [ "$(printf '%s' "$CONFIRM" | tr '[:upper:]' '[:lower:]')" != "y" ]; then
     echo
     echo "Update cancelled."
     read -r -p "Press Enter to close..."
-    exit 0
+    return 0
 fi
 
-# -- Phase 1: Create timestamped backup --------------------------------
 echo
 TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$BACKUP_BASE/update-backup-$TIMESTAMP"
-
 echo "[1/5] Creating backup in: backups/update-backup-$TIMESTAMP"
-mkdir -p "$BACKUP_DIR/app"
+mkdir -p "$BACKUP_DIR"
 [ -d "$PACKAGE_DIR/license" ] && cp -R "$PACKAGE_DIR/license" "$BACKUP_DIR/license"
 [ -d "$PACKAGE_DIR/uploads" ] && cp -R "$PACKAGE_DIR/uploads" "$BACKUP_DIR/uploads"
-[ -d "$PACKAGE_DIR/logs" ] && cp -R "$PACKAGE_DIR/logs" "$BACKUP_DIR/logs"
-[ -f "$APP_DIR/application.properties" ] && cp "$APP_DIR/application.properties" "$BACKUP_DIR/app/"
-echo "[1/5] Backup complete."
+[ -d "$APP_DIR" ] && cp -R "$APP_DIR" "$BACKUP_DIR/app"
+[ -d "$SCRIPT_DIR" ] && cp -R "$SCRIPT_DIR" "$BACKUP_DIR/scripts"
+echo "[1/5] Files backed up. (The database is backed up in step 3.)"
 
-# -- Phase 2: Stop running system ---------------------------------------
-echo "[2/5] Stopping the running system..."
-PID="$(lsof -ti:8080 2>/dev/null || true)"
-[ -n "$PID" ] && kill -9 $PID 2>/dev/null
-sleep 2
+PORTS="$JIG_PORT"
+RUN_PORT="$(tr -d '[:space:]' < "$PACKAGE_DIR/logs/running-port.txt" 2>/dev/null)"
+case "$RUN_PORT" in ''|*[!0-9]*) ;; *) [ "$RUN_PORT" != "$JIG_PORT" ] && PORTS="$JIG_PORT $RUN_PORT" ;; esac
+echo "[2/5] Stopping the running system (port $PORTS)..."
+for port in $PORTS; do
+    for pid in $(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null); do
+        ps -p "$pid" -o comm= 2>/dev/null | grep -qi java && kill "$pid" 2>/dev/null
+    done
+done
+sleep 3
+for port in $PORTS; do
+    for pid in $(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null); do
+        ps -p "$pid" -o comm= 2>/dev/null | grep -qi java && kill -9 "$pid" 2>/dev/null
+    done
+done
 echo "[2/5] System stopped."
 
-# -- Phase 3: Download and extract new JAR -------------------------------
-echo "[3/5] Downloading new package..."
+echo "[3/5] Downloading and installing v$LATEST_VERSION..."
 echo "       $DOWNLOAD_ZIP_URL"
 echo
-
 rm -rf "$DOWNLOAD_DIR"
 mkdir -p "$DOWNLOAD_DIR"
 
-if ! bash "$SCRIPT_DIR/update-download.sh" "$DOWNLOAD_ZIP_URL" "$DOWNLOAD_DIR" "$APP_DIR" "$EXPECTED_SHA256"; then
+bash "$SCRIPT_DIR/update-download.sh" "$DOWNLOAD_ZIP_URL" "$DOWNLOAD_DIR" "$PACKAGE_DIR" "$BACKUP_DIR" "$EXPECTED_SHA256"
+RESULT=$?
+if [ "$RESULT" -eq 1 ]; then
     echo
-    echo "[ERROR] Download or extraction failed."
-    echo "        Your data backup is safe in: $BACKUP_DIR"
-    echo "        The original JAR has not been replaced."
-    echo
-    echo "        Restart the system manually with START-JIG-NETWORK-APP.command"
-    echo "        or restore from backup if needed."
+    echo "[ERROR] Download or verification failed. Nothing was changed."
+    echo "        Start the system again with START-JIG-NETWORK-APP.command."
     echo
     read -r -p "Press Enter to close..."
-    exit 1
+    return 1
+elif [ "$RESULT" -ne 0 ]; then
+    echo
+    echo "[ERROR] The update stopped part-way. Your backup is in:"
+    echo "        $BACKUP_DIR"
+    echo "        Please send a screenshot of this window to gossipred5598@gmail.com"
+    echo "        before starting the system again."
+    echo
+    read -r -p "Press Enter to close..."
+    return 1
 fi
+echo "[3/5] New version installed."
 
-echo "[3/5] New JAR installed."
-
-# -- Phase 4: Restart system -----------------------------------------------
 echo "[4/5] Restarting the system..."
 open "$PACKAGE_DIR/START-JIG-NETWORK-APP.command"
 
-# -- Phase 5: Done -----------------------------------------------------------
 echo "[5/5] Update complete."
 echo
 echo "  Updated from v$CURRENT_VERSION to v$LATEST_VERSION"
@@ -135,4 +167,7 @@ echo
 echo "The system is restarting. Please wait for the browser to open."
 echo
 read -r -p "Press Enter to close..."
-exit 0
+return 0
+}
+
+main "$@"; exit $?

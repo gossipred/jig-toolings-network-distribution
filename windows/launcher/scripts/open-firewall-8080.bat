@@ -1,10 +1,4 @@
 @echo off
-echo Opening Windows Firewall port 8080...
-echo This script should be run as Administrator.
-echo.
-
-netsh advfirewall firewall add rule name="Jig Toolings System 8080" dir=in action=allow protocol=TCP localport=8080
-
-echo.
-echo Done.
-pause
+:: Kept for older instructions that mention this file name.
+:: Opens the port configured in app\application.properties (8080 unless changed).
+call "%~dp0open-firewall.bat"

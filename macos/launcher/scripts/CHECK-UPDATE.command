@@ -33,9 +33,12 @@ if [ -z "$LATEST_JSON" ]; then
     exit 1
 fi
 
-LATEST_VERSION="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("latestVersion",""))' 2>/dev/null)"
-RELEASE_DATE="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("releaseDate",""))' 2>/dev/null)"
-NOTES_URL="$(echo "$LATEST_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("notesUrl",""))' 2>/dev/null)"
+# plutil is built into macOS; python3 is not (it prompts to install Xcode tools).
+JSON_FILE="$(mktemp)"; printf '%s' "$LATEST_JSON" > "$JSON_FILE"
+LATEST_VERSION="$(plutil -extract latestVersion raw -o - "$JSON_FILE" 2>/dev/null)"
+RELEASE_DATE="$(plutil -extract releaseDate raw -o - "$JSON_FILE" 2>/dev/null)"
+NOTES_URL="$(plutil -extract notesUrl raw -o - "$JSON_FILE" 2>/dev/null)"
+rm -f "$JSON_FILE"
 
 if [ -z "$LATEST_VERSION" ]; then
     echo "[ERROR] Could not parse version information."
@@ -43,7 +46,16 @@ if [ -z "$LATEST_VERSION" ]; then
     exit 1
 fi
 
-if [ "$LATEST_VERSION" = "$CURRENT_VERSION" ]; then
+# True when version $1 is newer than $2 (numeric, dot-separated).
+version_gt() {
+    local IFS=.; local a=($1) b=($2) i
+    for i in 0 1 2 3; do
+        [ "${a[i]:-0}" -gt "${b[i]:-0}" ] 2>/dev/null && return 0
+        [ "${a[i]:-0}" -lt "${b[i]:-0}" ] 2>/dev/null && return 1
+    done
+    return 1
+}
+if ! version_gt "$LATEST_VERSION" "$CURRENT_VERSION"; then
     echo "System is up to date (v$CURRENT_VERSION)."
 else
     echo "*** UPDATE AVAILABLE ***"

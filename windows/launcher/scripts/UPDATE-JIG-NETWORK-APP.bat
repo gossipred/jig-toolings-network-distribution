@@ -1,12 +1,23 @@
 @echo off
+:: The update replaces files in scripts\, including this one. cmd reads a batch
+:: file line by line while it runs, so run from a temporary copy instead.
+if /i not "%~1"=="--run" (
+    copy /Y "%~f0" "%TEMP%\jig-updater-run.bat" >nul
+    "%TEMP%\jig-updater-run.bat" --run "%~dp0"
+    exit /b
+)
 setlocal enabledelayedexpansion
 
-set "SCRIPT_DIR=%~dp0"
-set "PACKAGE_DIR=%SCRIPT_DIR%.."
+set "SCRIPT_DIR=%~2"
+for %%d in ("%SCRIPT_DIR%..") do set "PACKAGE_DIR=%%~fd"
 set "APP_DIR=%PACKAGE_DIR%\app"
 set "BACKUP_BASE=%PACKAGE_DIR%\backups"
 set "DOWNLOAD_DIR=%TEMP%\jig-update"
 set "UPDATE_URL=https://raw.githubusercontent.com/gossipred/jig-toolings-network-distribution/main/shared/latest.json"
+if defined JIG_UPDATE_URL set "UPDATE_URL=%JIG_UPDATE_URL%"
+
+set "JIG_PORT=8080"
+if exist "%SCRIPT_DIR%jig-port.bat" call "%SCRIPT_DIR%jig-port.bat"
 
 echo ============================================================
 echo  Jig ^& Toolings Management System - Semi-Automatic Updater
@@ -34,6 +45,7 @@ set "LATEST_VERSION="
 set "RELEASE_DATE="
 set "NOTES_URL="
 set "DOWNLOAD_ZIP_URL="
+set "EXPECTED_SHA256="
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$info = '%TEMP%\jig-latest-info.txt';" ^
@@ -56,7 +68,7 @@ if not exist "%TEMP%\jig-latest-info.txt" (
     exit /b 1
 )
 
-for /f "tokens=1* delims==" %%k in (%TEMP%\jig-latest-info.txt) do (
+for /f "usebackq tokens=1* delims==" %%k in ("%TEMP%\jig-latest-info.txt") do (
     if "%%k"=="ERROR"          ( echo [ERROR] %%l & del "%TEMP%\jig-latest-info.txt" & pause & exit /b 1 )
     if "%%k"=="LATEST_VERSION" ( set "LATEST_VERSION=%%l" )
     if "%%k"=="RELEASE_DATE"   ( set "RELEASE_DATE=%%l" )
@@ -72,7 +84,8 @@ if "%LATEST_VERSION%"=="" (
     exit /b 1
 )
 
-if "%CURRENT_VERSION%"=="%LATEST_VERSION%" (
+powershell -NoProfile -Command "if ([version]'%LATEST_VERSION%' -gt [version]'%CURRENT_VERSION%') { exit 1 } else { exit 0 }" >nul 2>&1
+if not errorlevel 1 (
     echo System is up to date.
     echo Installed version: %CURRENT_VERSION%
     echo.
@@ -88,13 +101,15 @@ echo   Latest version    : %LATEST_VERSION%
 echo   Release date      : %RELEASE_DATE%
 echo   Release notes     : %NOTES_URL%
 echo.
-echo The following data will be backed up before the update:
-echo   license\  uploads\  logs\  app\application.properties
+echo Before updating, a backup is made of:
+echo   database, license\, uploads\, app\ (program + settings), scripts\
+echo Your settings (port, database password) are kept.
 echo.
-echo [WARNING] Stop the running system and update the JAR file.
-echo           LAN users will be disconnected during the update.
+echo [WARNING] The system stops during the update.
+echo           LAN users will be disconnected for a few minutes.
 echo.
-set /p CONFIRM=Proceed with update? (Y to continue / any other key to cancel):
+set "CONFIRM="
+set /p CONFIRM=Proceed with update? (Y to continue / any other key to cancel): 
 if /i not "%CONFIRM%"=="Y" (
     echo.
     echo Update cancelled.
@@ -104,31 +119,37 @@ if /i not "%CONFIRM%"=="Y" (
 
 :: -- Phase 1: Create timestamped backup --------------------------
 echo.
-for /f "tokens=1-6 delims=/: " %%a in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "TIMESTAMP=%%a"
+for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "TIMESTAMP=%%t"
 set "BACKUP_DIR=%BACKUP_BASE%\update-backup-%TIMESTAMP%"
 
 echo [1/5] Creating backup in: backups\update-backup-%TIMESTAMP%
 if not exist "%BACKUP_BASE%" mkdir "%BACKUP_BASE%"
 mkdir "%BACKUP_DIR%"
-mkdir "%BACKUP_DIR%\app"
 
-if exist "%PACKAGE_DIR%\license"                 robocopy "%PACKAGE_DIR%\license"  "%BACKUP_DIR%\license"  /E /NP /NFL /NDL /NJH /NJS >nul
-if exist "%PACKAGE_DIR%\uploads"                 robocopy "%PACKAGE_DIR%\uploads"  "%BACKUP_DIR%\uploads"  /E /NP /NFL /NDL /NJH /NJS >nul
-if exist "%PACKAGE_DIR%\logs"                    robocopy "%PACKAGE_DIR%\logs"     "%BACKUP_DIR%\logs"     /E /NP /NFL /NDL /NJH /NJS >nul
-if exist "%APP_DIR%\application.properties"      copy /Y "%APP_DIR%\application.properties" "%BACKUP_DIR%\app\" >nul
+if exist "%PACKAGE_DIR%\license" robocopy "%PACKAGE_DIR%\license" "%BACKUP_DIR%\license" /E /NP /NFL /NDL /NJH /NJS >nul
+if exist "%PACKAGE_DIR%\uploads" robocopy "%PACKAGE_DIR%\uploads" "%BACKUP_DIR%\uploads" /E /NP /NFL /NDL /NJH /NJS >nul
+if exist "%APP_DIR%"             robocopy "%APP_DIR%"             "%BACKUP_DIR%\app"     /E /NP /NFL /NDL /NJH /NJS >nul
+if exist "%SCRIPT_DIR%"          robocopy "%SCRIPT_DIR%."         "%BACKUP_DIR%\scripts" /E /NP /NFL /NDL /NJH /NJS >nul
 
-echo [1/5] Backup complete.
+echo [1/5] Files backed up. (The database is backed up in step 3.)
 
 :: -- Phase 2: Stop running system --------------------------------
-echo [2/5] Stopping the running system...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8080 ^| findstr LISTENING 2^>nul') do (
-    taskkill /PID %%a /F >nul 2>&1
+set "PORTS=%JIG_PORT%"
+set "RUN_PORT="
+if exist "%PACKAGE_DIR%\logs\running-port.txt" set /p RUN_PORT=<"%PACKAGE_DIR%\logs\running-port.txt"
+if defined RUN_PORT for /f "tokens=1" %%p in ("!RUN_PORT!") do if not "%%p"=="%JIG_PORT%" set "PORTS=%JIG_PORT% %%p"
+echo [2/5] Stopping the running system (port %PORTS%)...
+for %%p in (%PORTS%) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%%p .*LISTENING" 2^>nul') do (
+        tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
+        if not errorlevel 1 taskkill /PID %%a /F >nul 2>&1
+    )
 )
-timeout /t 2 /nobreak >nul
+timeout /t 3 /nobreak >nul
 echo [2/5] System stopped.
 
-:: -- Phase 3: Download and extract new JAR -----------------------
-echo [3/5] Downloading new package...
+:: -- Phase 3: Download, verify and apply the new version ----------
+echo [3/5] Downloading and installing v%LATEST_VERSION%...
 echo        %DOWNLOAD_ZIP_URL%
 echo.
 
@@ -139,23 +160,31 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
     -File "%SCRIPT_DIR%update-download.ps1" ^
     -DownloadUrl "%DOWNLOAD_ZIP_URL%" ^
     -DownloadDir "%DOWNLOAD_DIR%" ^
-    -AppDir      "%APP_DIR%" ^
+    -PackageDir  "%PACKAGE_DIR%" ^
+    -BackupDir   "%BACKUP_DIR%" ^
     -ExpectedSha "%EXPECTED_SHA256%"
+set "UPDATE_RESULT=%errorlevel%"
 
-if errorlevel 1 (
+if "%UPDATE_RESULT%"=="1" (
     echo.
-    echo [ERROR] Download or extraction failed.
-    echo         Your data backup is safe in: %BACKUP_DIR%
-    echo         The original JAR has not been replaced.
+    echo [ERROR] Download or verification failed. Nothing was changed.
+    echo         Start the system again with START-JIG-NETWORK-APP.bat.
     echo.
-    echo         Restart the system manually with START-JIG-NETWORK-APP.bat
-    echo         or restore from backup if needed.
+    pause
+    exit /b 1
+)
+if not "%UPDATE_RESULT%"=="0" (
+    echo.
+    echo [ERROR] The update stopped part-way. Your backup is in:
+    echo         %BACKUP_DIR%
+    echo         Please send a screenshot of this window to gossipred5598@gmail.com
+    echo         before starting the system again.
     echo.
     pause
     exit /b 1
 )
 
-echo [3/5] New JAR installed.
+echo [3/5] New version installed.
 
 :: -- Phase 4: Restart system -------------------------------------
 echo [4/5] Restarting the system...

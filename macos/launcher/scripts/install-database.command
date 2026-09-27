@@ -47,6 +47,13 @@ if ! "$MYSQL_EXE" -u root < "$PACKAGE_DIR/database/seed.sql"; then
     exit 1
 fi
 
+# A fresh schema.sql already contains every migration, so record them all as
+# applied; the updater then only runs migrations added in later versions.
+"$MYSQL_EXE" -u root -e "CREATE TABLE IF NOT EXISTS $DB_NAME.schema_migrations (filename VARCHAR(255) NOT NULL PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+for f in "$PACKAGE_DIR"/database/migration-*.sql; do
+    [ -f "$f" ] && "$MYSQL_EXE" -u root -e "INSERT IGNORE INTO $DB_NAME.schema_migrations (filename) VALUES ('$(basename "$f")')"
+done
+
 echo
 echo "============================================"
 echo " Database installation completed!"

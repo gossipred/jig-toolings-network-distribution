@@ -1,0 +1,158 @@
+﻿================================================================
+  治具及模具管理系統 — 更改連線埠（Port）說明（Windows）
+  Jig & Toolings Management System — Changing the Port (Windows)
+  適用版本 / For version: v1.3.1 以上 / and later
+================================================================
+
+中文說明在前，English follows below.
+
+################################################################
+  中文
+################################################################
+
+【什麼時候需要改 Port？】
+系統預設使用 8080 port，網址是 http://localhost:8080。
+如果啟動時出現以下訊息，代表 8080 已經被其他軟體使用，需要換一個 port：
+  [ERROR] Port 8080 is already in use by process ID ...
+
+※ 只改治具系統網頁的 port，不會影響 XAMPP：
+   MySQL 資料庫仍使用 3306，治具系統照樣找得到資料庫。
+※ 之後一鍵更新（UPDATE-JIG-NETWORK-APP.bat）會保留您改過的 port。
+
+────────────────────────────────────────
+方法一：使用「更改 Port 小工具」（建議）
+────────────────────────────────────────
+1. 打開安裝資料夾（例如 D:\JigSystem）→ scripts 資料夾
+2. 點兩下「change-port.bat」
+3. 畫面顯示目前的 port，輸入新的 port 按 Enter
+   建議使用 8081～8099 之間的數字，例如 8090
+4. 小工具會自動檢查：
+   • 必須是 1024～65535 的數字
+   • 不能是 3306、3307、8443（常被其他軟體使用）
+   • 這台電腦目前沒有其他程式在用這個 port
+   不符合時會顯示原因，設定不會被修改
+5. 自動備份設定檔後修改，看到「[2/3] Port changed: 8080 -> 8090」即完成
+6. 詢問是否開啟 Windows 防火牆 → 輸入 Y
+   （其他電腦要連線就需要開；會跳出 Windows 權限視窗，請按「是」）
+7. 若系統正在執行，會詢問是否立即以新 port 重新啟動 → 輸入 Y
+
+────────────────────────────────────────
+方法二：手動修改設定檔
+────────────────────────────────────────
+1. 先停止系統：點兩下 scripts\stop-system.bat
+2. 用「記事本」打開 app\application.properties
+3. 找到這一行：
+     server.port=8080
+   把數字改成新的 port，例如：
+     server.port=8090
+   其他內容請勿修改，存檔
+4. 以「系統管理員身分」執行 scripts\open-firewall.bat
+   （在檔案上按右鍵 →「以系統管理員身分執行」）
+5. 點兩下 START-JIG-NETWORK-APP.bat 啟動
+
+────────────────────────────────────────
+改完之後
+────────────────────────────────────────
+• 本機網址改為：http://localhost:新的port（例如 http://localhost:8090）
+• 其他電腦網址改為：http://伺服器IP:新的port
+  伺服器 IP 可執行 scripts\show-network-address.bat 查詢
+• 請通知同事更新瀏覽器書籤
+
+────────────────────────────────────────
+常見問題
+────────────────────────────────────────
+Q：輸入的 port 顯示「already in use」？
+A：該 port 被其他程式使用中，請換一個數字。
+
+Q：本機可以開，其他電腦連不上？
+A：以系統管理員身分執行 scripts\open-firewall.bat，開啟新 port 的防火牆。
+
+Q：忘記改成哪個 port？
+A：執行 scripts\show-network-address.bat，畫面會顯示目前的網址。
+
+Q：想改回 8080？
+A：再執行一次 change-port.bat，輸入 8080。
+
+Q：改壞了怎麼辦？
+A：app 資料夾內有自動備份 application.properties.bak-日期時間，
+   停止系統後把它複製回 application.properties 即可。
+
+問題聯絡：gossipred5598@gmail.com
+
+################################################################
+  ENGLISH
+################################################################
+
+[WHEN DO I NEED TO CHANGE THE PORT?]
+The system uses port 8080 by default (http://localhost:8080).
+If you see this message when starting the system, another program is
+already using port 8080 and you need a different port:
+  [ERROR] Port 8080 is already in use by process ID ...
+
+* Only the web port of this system changes. XAMPP is not affected:
+  MySQL still uses port 3306 and the system still finds its database.
+* One-click updates (UPDATE-JIG-NETWORK-APP.bat) keep the port you set.
+
+----------------------------------------
+Method 1: "Change Port" tool (recommended)
+----------------------------------------
+1. Open the installation folder (e.g. D:\JigSystem) -> scripts folder
+2. Double-click "change-port.bat"
+3. The current port is shown. Type the new port and press Enter
+   A number from 8081 to 8099 is recommended, e.g. 8090
+4. The tool checks that:
+   - it is a number from 1024 to 65535
+   - it is not 3306, 3307 or 8443 (commonly used by other software)
+   - no other program on this computer is using it
+   If a check fails, the reason is shown and nothing is changed
+5. The settings file is backed up and updated.
+   "[2/3] Port changed: 8080 -> 8090" means done
+6. When asked to open the Windows Firewall, type Y
+   (needed for other computers; click "Yes" in the Windows prompt)
+7. If the system is running, you are asked to restart it on the new
+   port now -> type Y
+
+----------------------------------------
+Method 2: Edit the settings file by hand
+----------------------------------------
+1. Stop the system: double-click scripts\stop-system.bat
+2. Open app\application.properties with Notepad
+3. Find this line:
+     server.port=8080
+   and change the number, for example:
+     server.port=8090
+   Do not change anything else. Save the file
+4. Run scripts\open-firewall.bat as Administrator
+   (right-click the file -> "Run as administrator")
+5. Double-click START-JIG-NETWORK-APP.bat to start
+
+----------------------------------------
+After changing the port
+----------------------------------------
+- This computer: http://localhost:NEW-PORT (e.g. http://localhost:8090)
+- Other computers: http://SERVER-IP:NEW-PORT
+  Run scripts\show-network-address.bat to see SERVER-IP
+- Ask your colleagues to update their browser bookmarks
+
+----------------------------------------
+FAQ
+----------------------------------------
+Q: The port I typed is "already in use"?
+A: Another program is using it. Choose a different number.
+
+Q: It works on the server but other computers cannot connect?
+A: Run scripts\open-firewall.bat as Administrator to open the new port.
+
+Q: I forgot which port I chose?
+A: Run scripts\show-network-address.bat - it shows the current address.
+
+Q: How do I go back to 8080?
+A: Run change-port.bat again and enter 8080.
+
+Q: Something went wrong?
+A: The app folder contains an automatic backup named
+   application.properties.bak-DATE-TIME. Stop the system and copy it
+   back over application.properties.
+
+Contact: gossipred5598@gmail.com
+================================================================

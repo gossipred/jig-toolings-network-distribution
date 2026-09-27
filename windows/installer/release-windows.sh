@@ -81,7 +81,12 @@ cp "$LAUNCHER_DIR/START-JIG-NETWORK-APP.bat" "$PACKAGE_DIR/START-JIG-NETWORK-APP
 for f in "$LAUNCHER_DIR/scripts/"*.bat "$LAUNCHER_DIR/scripts/"*.ps1; do
     [ -f "$f" ] && cp "$f" "$PACKAGE_DIR/scripts/"
 done
-echo "[3/5] Launcher sync OK."
+# cmd.exe misparses LF-only batch files (call :label / goto can land on the wrong
+# line), and they are edited on a Mac — always ship them with CRLF line endings.
+for f in "$PACKAGE_DIR"/*.bat "$PACKAGE_DIR"/scripts/*.bat; do
+    [ -f "$f" ] && perl -pi -e 's/\r?\n/\r\n/' "$f"
+done
+echo "[3/5] Launcher sync OK (batch files converted to CRLF)."
 echo ""
 
 # ── Step 3.5: Copy Java runtime ──────────────────────────────────────────────

@@ -1,6 +1,6 @@
 ﻿================================================================
   Jig & Toolings Management System
-  Windows Network Edition - Installation Guide  v1.3.0
+  Windows Network Edition - Installation Guide  v1.3.1
   * Please read this guide BEFORE installing to avoid most errors
   中文版：INSTALL-GUIDE-Windows-zh-TW.txt
 ================================================================
@@ -9,8 +9,8 @@
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 Files you need (choose one method):
-  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.3.0.exe
-  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.3.0.zip
+  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.3.1.exe
+  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.3.1.zip
 
 XAMPP is also available from the official website:
 https://www.apachefriends.org/download.html
@@ -37,11 +37,12 @@ STEP 1: Install XAMPP (MySQL database - required for both methods, once)
    - Method B: click "Start" on the MySQL row; green means it is running
 
 ================================================================
-STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.3.0.exe
+STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.3.1.exe
 ================================================================
-1. Double-click "JigToolingsSetup-1.3.0.exe"
+1. Double-click "JigToolingsSetup-1.3.1.exe"
    If "Windows protected your PC" appears -> "More info" -> "Run anyway"
-2. Click "Next"; you may choose the install folder (e.g. D:\JigSystem)
+2. Click "Next"; the default folder is C:\JigSystem, or choose another (e.g. D:\JigSystem)
+   !! Do not choose C:\Program Files - the system writes data into its own folder
 3. The wizard automatically:
    - sets MySQL to start automatically with Windows
    - creates the database
@@ -78,6 +79,8 @@ STEP 3: Start and sign in
    If you see [ERROR]:
    - MySQL is not responding     -> start MySQL in XAMPP Control Panel
    - Port 8080 is already in use -> run scripts\stop-system.bat, then start again
+     Still in use (another program uses 8080) -> run scripts\change-port.bat to
+     pick another port; see PORT-CHANGE-GUIDE-Windows.txt
 
 ================================================================
 STEP 4: Free trial and license
@@ -97,7 +100,7 @@ STEP 4: Free trial and license
 ================================================================
 1. On the server run scripts\show-network-address.bat to see its LAN IP
 2. On other computers open http://(that IP):8080 in a browser
-3. If they cannot connect, run scripts\open-firewall-8080.bat as
+3. If they cannot connect, run scripts\open-firewall.bat as
    Administrator (right-click -> Run as administrator)
 
 ================================================================
@@ -112,7 +115,8 @@ Recommended once a day before leaving work.
 1. "Check for Updates" (top right of the home page) shows current/latest version
 2. If a new version exists, double-click scripts\UPDATE-JIG-NETWORK-APP.bat
    on the server -> backs up data, downloads the new version, restarts
-   Updates keep all existing data (jig records, license, uploaded files)
+   The database and files are backed up first. Jig records, license,
+   uploaded files, and your port and database settings are all kept
 
 ================================================================
 [CONTACT]

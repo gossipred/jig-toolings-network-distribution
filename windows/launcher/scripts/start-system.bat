@@ -2,13 +2,14 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
-set "PACKAGE_DIR=%SCRIPT_DIR%.."
+for %%d in ("%SCRIPT_DIR%..") do set "PACKAGE_DIR=%%~fd"
 set "APP_DIR=%PACKAGE_DIR%\app"
 set "LOG_DIR=%PACKAGE_DIR%\logs"
 set "RUNTIME_DIR=%PACKAGE_DIR%\runtime"
 set "JAR_FILE=%APP_DIR%\jig-management-system.jar"
-set "LOCAL_URL=http://localhost:8080"
-set "LOGIN_URL=http://localhost:8080/login"
+call "%SCRIPT_DIR%jig-port.bat"
+set "LOCAL_URL=http://localhost:%JIG_PORT%"
+set "LOGIN_URL=http://localhost:%JIG_PORT%/login"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
@@ -24,7 +25,7 @@ for /f "tokens=2 delims==" %%v in ('findstr /r "^app\.version=" "%APP_DIR%\appli
 
 if not "%CURRENT_VERSION%"=="" (
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "try { $j = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 '%UPDATE_URL%').Content | ConvertFrom-Json; if ($j.latestVersion -ne '%CURRENT_VERSION%') { Write-Host ''; Write-Host '*** UPDATE AVAILABLE ***'; Write-Host ('  Current : %CURRENT_VERSION%'); Write-Host ('  Latest  : ' + $j.latestVersion); Write-Host ('  Notes   : ' + $j.notesUrl); Write-Host '  Run scripts\CHECK-UPDATE.bat for update instructions.'; Write-Host '' } } catch {}" 2>nul
+        "try { $j = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 '%UPDATE_URL%').Content | ConvertFrom-Json; if ([version]$j.latestVersion -gt [version]'%CURRENT_VERSION%') { Write-Host ''; Write-Host '*** UPDATE AVAILABLE ***'; Write-Host ('  Current : %CURRENT_VERSION%'); Write-Host ('  Latest  : ' + $j.latestVersion); Write-Host ('  Notes   : ' + $j.notesUrl); Write-Host '  Run scripts\UPDATE-JIG-NETWORK-APP.bat to update.'; Write-Host '' } } catch {}" 2>nul
 )
 :: -----------------------------------------------------------------
 echo.
@@ -85,21 +86,37 @@ if errorlevel 1 (
 echo [INFO] MySQL is running.
 echo.
 
+rem After change-port the system may still run on the previous port. It also keeps
+rem logs\jig-system.log open, so a second start could not even write its log.
+set "RUN_PORT="
+if exist "%LOG_DIR%\running-port.txt" set /p RUN_PORT=<"%LOG_DIR%\running-port.txt"
+if defined RUN_PORT if not "%RUN_PORT%"=="%JIG_PORT%" (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%RUN_PORT% .*LISTENING"') do (
+        tasklist /FI "PID eq %%a" /NH | findstr /i "java.exe javaw.exe" >nul
+        if not errorlevel 1 (
+            echo [INFO] The system is still running on the previous port %RUN_PORT%. Stopping it...
+            taskkill /PID %%a /F >nul 2>&1
+            timeout /t 3 /nobreak >nul
+        )
+    )
+)
+
 call :check_login
 if not errorlevel 1 (
     echo [INFO] The system is already running.
     start %LOCAL_URL%
     echo.
     echo Local URL: %LOCAL_URL%
-    echo LAN users can use this PC's IP address with port 8080.
+    echo LAN users can use this PC's IP address with port %JIG_PORT%.
     pause
     exit /b 0
 )
 
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8080 ^| findstr LISTENING') do (
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%JIG_PORT% .*LISTENING"') do (
     echo.
-    echo [ERROR] Port 8080 is already in use by process ID %%a, but the login page is not responding.
-    echo Run scripts\stop-system.bat first, or close the other program using port 8080.
+    echo [ERROR] Port %JIG_PORT% is already in use by process ID %%a, but the login page is not responding.
+    echo Run scripts\stop-system.bat first, or close the other program using port %JIG_PORT%.
+    echo To use a different port, run scripts\change-port.bat.
     pause
     exit /b 1
 )
@@ -108,23 +125,26 @@ echo.
 echo Starting Jig ^& Toolings Management System...
 echo.
 
+rem Remember the port in use, so stop-system still finds the system after the port setting changes.
+>"%LOG_DIR%\running-port.txt" echo %JIG_PORT%
 cd /d "%APP_DIR%"
 start "Jig Toolings System" /min cmd /c ""%JAVA_EXE%" -jar jig-management-system.jar --spring.config.location=file:application.properties > "%LOG_DIR%\jig-system.log" 2>&1"
 
 echo Waiting for the web server to become ready...
+echo (The first start can take 1-2 minutes on slower computers.)
 echo.
 
-for /l %%i in (1,1,60) do (
+for /l %%i in (1,1,90) do (
     call :check_login
     if not errorlevel 1 goto ready
     timeout /t 1 /nobreak > nul
 )
 
 echo.
-echo [ERROR] The system did not become ready within 60 seconds.
+echo [ERROR] The system did not become ready within 3 minutes.
 echo Please check:
 echo   1. XAMPP MySQL is running
-echo   2. Port 8080 is not blocked
+echo   2. Port %JIG_PORT% is not blocked
 echo   3. Log file: %LOG_DIR%\jig-system.log
 echo.
 pause
@@ -135,8 +155,8 @@ echo.
 echo [OK] The system is ready.
 echo Local URL: %LOCAL_URL%
 echo.
-echo If this is the first activation, login with admin / 123456.
-echo If the License page appears, install the .lic file issued by JJ.
+echo First login: admin / 123456 (change the password right away).
+echo A 30-day free trial starts automatically on first launch.
 echo.
 start %LOCAL_URL%
 pause

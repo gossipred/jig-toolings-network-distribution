@@ -1,6 +1,6 @@
 ﻿================================================================
   Jig & Toolings Management System
-  macOS Network Edition - Installation Guide  v1.3.0
+  macOS Network Edition - Installation Guide  v1.3.1
   * Please read this guide BEFORE installing to avoid most errors
   中文版：INSTALL-GUIDE-macOS-zh-TW.txt
 ================================================================
@@ -10,7 +10,7 @@ https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 Files you need:
   1. XAMPP-installer.dmg (MySQL database)
-  2. jig-toolings-network-macos-1.3.0.zip (the system)
+  2. jig-toolings-network-macos-1.3.1.zip (the system)
 
 XAMPP is also available from the official website:
 https://www.apachefriends.org/download.html
@@ -41,7 +41,7 @@ STEP 1: Install XAMPP (MySQL database - once)
 ================================================================
 STEP 2: Unzip the system
 ================================================================
-1. Double-click "jig-toolings-network-macos-1.3.0.zip" to unzip it
+1. Double-click "jig-toolings-network-macos-1.3.1.zip" to unzip it
 2. Move the "mac-network-app" folder to a permanent location
    (e.g. Applications or your home folder - not a folder you will clean up)
 3. [Unblock all scripts at once - recommended]
@@ -82,6 +82,8 @@ STEP 5: Start and sign in
    If you see [ERROR]:
    - MySQL is not responding     -> run scripts/setup-mysql-autostart.command again
    - Port 8080 is already in use -> run scripts/stop-system.command, then start again
+     Still in use (another program uses 8080) -> run scripts/change-port.command to
+     pick another port; see PORT-CHANGE-GUIDE-macOS.txt
 
 ================================================================
 STEP 6: Free trial and license
@@ -101,7 +103,7 @@ STEP 6: Free trial and license
 ================================================================
 1. On the server run scripts/show-network-address.command to see its LAN IP
 2. On other computers open http://(that IP):8080 in a browser
-3. If they cannot connect, run scripts/open-firewall-8080.command on the server
+3. If they cannot connect, run scripts/open-firewall.command on the server
 
 ================================================================
 [DAILY BACKUP]
@@ -115,7 +117,8 @@ Recommended once a day before leaving work.
 1. "Check for Updates" (top right of the home page) shows current/latest version
 2. If a new version exists, double-click scripts/UPDATE-JIG-NETWORK-APP.command
    on the server -> backs up data, downloads the new version, restarts
-   Updates keep all existing data (jig records, license, uploaded files)
+   The database and files are backed up first. Jig records, license,
+   uploaded files, and your port and database settings are all kept
 
 ================================================================
 [CONTACT]

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -u
+cd "$(dirname "$0")"
+SCRIPT_DIR="$(pwd)"
+. "$SCRIPT_DIR/jig-port.sh"
+JIG_PORT="$(jig_read_port "$SCRIPT_DIR/..")"
+
 echo "Local URL:"
-echo "http://localhost:8080"
+echo "http://localhost:$JIG_PORT"
 echo
 echo "LAN addresses on this Mac:"
 echo
@@ -13,6 +18,6 @@ for iface in en0 en1 en2; do
 done
 echo
 echo "Other users can open:"
-echo "http://SERVER-IP:8080"
+echo "http://SERVER-IP:$JIG_PORT"
 echo
 read -r -p "Press Enter to close..."

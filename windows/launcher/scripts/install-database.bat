@@ -47,6 +47,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:: A fresh schema.sql already contains every migration, so record them all as
+:: applied; the updater then only runs migrations added in later versions.
+"%MYSQL_EXE%" -u root -e "CREATE TABLE IF NOT EXISTS %DB_NAME%.schema_migrations (filename VARCHAR(255) NOT NULL PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+for %%f in ("%PACKAGE_DIR%\database\migration-*.sql") do "%MYSQL_EXE%" -u root -e "INSERT IGNORE INTO %DB_NAME%.schema_migrations (filename) VALUES ('%%~nxf')"
+
 echo.
 echo ============================================
 echo  Database installation completed!

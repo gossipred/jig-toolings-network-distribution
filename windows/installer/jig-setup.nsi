@@ -24,7 +24,9 @@
 ; ── 一般設定 ──────────────────────────────────────────────────────────────────
 Name            "${PRODUCT_NAME} v${PRODUCT_VER}"
 OutFile         "${OUTFILE}"
-InstallDir      "$PROGRAMFILES64\JigSystem"
+; Not under Program Files: the system writes into its own folder (logs, license,
+; uploads, backups, settings) and standard users cannot write there.
+InstallDir      "C:\JigSystem"
 InstallDirRegKey HKLM "${REG_KEY}" "InstallLocation"
 RequestExecutionLevel admin
 Unicode True
@@ -32,6 +34,8 @@ SetCompressor   lzma
 
 ; ── 變數 ──────────────────────────────────────────────────────────────────────
 Var MYSQLBIN   ; XAMPP 的 MySQL bin 資料夾（C:\xampp\mysql\bin 或 C:\xampp\mariadb\bin）
+Var UPGRADE    ; 1 = 安裝在既有版本上（保留設定、授權、上傳檔案與資料庫）
+Var BACKUPDIR
 
 ; ── MUI2 介面設定 ──────────────────────────────────────────────────────────────
 !define MUI_ABORTWARNING
@@ -73,16 +77,59 @@ Function .onInit
       "尚未偵測到 XAMPP（C:\xampp）。$\n$\n請先執行 XAMPP-installer.exe 安裝 XAMPP：$\n  • 安裝路徑保持預設 C:\xampp$\n  • 元件只需要 MySQL，其他可以取消勾選$\n$\n裝好後再重新執行本安裝程式。"
     Abort
   ${EndIf}
+
+  ; 已安裝過：明確告訴使用者這是升級、裝在哪裡、資料會保留（原本只寫在「顯示細節」裡看不到）
+  ReadRegStr $0 HKLM "${REG_KEY}" "InstallLocation"
+  ReadRegStr $1 HKLM "${REG_KEY}" "DisplayVersion"
+  ${If} $0 != ""
+  ${AndIf} ${FileExists} "$0\app\application.properties"
+    MessageBox MB_ICONINFORMATION|MB_OKCANCEL \
+      "偵測到已安裝的治具管理系統 v$1$\n位置：$0$\n$\n本次會升級到 v${PRODUCT_VER}，安裝在原本的資料夾。$\n授權、上傳檔案、資料庫資料、port 與設定都會保留，$\n升級前會自動備份到 backups\before-setup-v${PRODUCT_VER}。$\n$\n按「確定」繼續升級。" \
+      IDOK +2
+    Abort
+  ${EndIf}
 FunctionEnd
 
 ; ── 安裝 Section ──────────────────────────────────────────────────────────────
 Section "主程式" SecMain
   SectionIn RO
 
+  ; Step 0: 升級偵測。已有 app\application.properties 代表是覆蓋舊版：
+  ; 先停系統、備份，並保存客戶的設定檔（File /r 會用範本蓋掉它）
+  InitPluginsDir
+  StrCpy $UPGRADE 0
+  ${If} ${FileExists} "$INSTDIR\app\application.properties"
+    StrCpy $UPGRADE 1
+    StrCpy $BACKUPDIR "$INSTDIR\backups\before-setup-v${PRODUCT_VER}"
+    DetailPrint "偵測到已安裝的版本，進行升級（保留設定、授權、上傳檔案與資料庫）..."
+    nsExec::Exec `powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($$_.Name -eq 'java.exe' -or $$_.Name -eq 'javaw.exe') -and $$_.CommandLine -like '*jig-management-system.jar*' } | ForEach-Object { Stop-Process -Id $$_.ProcessId -Force }"`
+    Pop $1
+    Sleep 2000
+    CreateDirectory "$BACKUPDIR\app"
+    CreateDirectory "$BACKUPDIR\scripts"
+    CopyFiles /SILENT "$INSTDIR\app\*.*" "$BACKUPDIR\app"
+    CopyFiles /SILENT "$INSTDIR\scripts\*.*" "$BACKUPDIR\scripts"
+    CopyFiles /SILENT "$INSTDIR\app\application.properties" "$PLUGINSDIR\old.properties"
+  ${EndIf}
+
   ; Step 1: 解壓縮全部系統檔案
   DetailPrint "正在複製系統檔案..."
   SetOutPath "$INSTDIR"
   File /r "${PACKAGE_DIR}/*"
+
+  ; 讓一般使用者可以寫入安裝資料夾（記錄檔、授權、上傳檔案、備份、設定）。
+  ; 舊版可能裝在 Program Files，一般使用者沒有寫入權限，覆蓋升級時一併修正。
+  ; *S-1-5-32-545 = Users 群組（用 SID，中文版 Windows 群組名稱不同也適用）
+  DetailPrint "設定資料夾權限..."
+  nsExec::ExecToLog 'icacls "$INSTDIR" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q'
+  Pop $1
+
+  ${If} $UPGRADE == 1
+    ; 新範本交給 apply-update.ps1 合併；客戶原本的設定檔放回去
+    CreateDirectory "$PLUGINSDIR\src\app"
+    CopyFiles /SILENT "$INSTDIR\app\application.properties" "$PLUGINSDIR\src\app\application.properties"
+    CopyFiles /SILENT "$PLUGINSDIR\old.properties" "$INSTDIR\app\application.properties"
+  ${EndIf}
 
   ; Step 2: 確保 MySQL 在跑。已在跑（例如客戶從 XAMPP Control Panel 按過 Start）就不動它；
   ; 沒在跑才註冊成 Windows 服務（開機自動啟動，伺服器不用每次手動按 Start）再啟動。
@@ -114,14 +161,27 @@ Section "主程式" SecMain
   ${EndIf}
   WriteRegStr HKLM "${REG_KEY}" "MySQLBin" "$MYSQLBIN"
 
-  ; Step 3: 建立資料庫（MySQL 沒起來就跳過，提示手動補做）
+  ; Step 3: 資料庫。新安裝：建立資料庫。升級：備份資料庫、合併設定、只套用新的
+  ; 資料庫變更（不重跑示範資料，避免蓋掉客戶改過的帳號狀態）。MySQL 沒起來就跳過。
   ${If} $0 == 0
+  ${AndIf} $UPGRADE == 1
+    DetailPrint "升級資料庫與設定..."
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\scripts\apply-update.ps1" -Source "$PLUGINSDIR\src" -PackageDir "$INSTDIR" -BackupDir "$BACKUPDIR" -SkipFiles'
+    Pop $1
+    ${If} $1 != 0
+      MessageBox MB_ICONEXCLAMATION|MB_OK \
+        "資料庫或設定升級失敗（錯誤碼：$1）。$\n$\n舊版的檔案與資料庫備份在：$\n$BACKUPDIR$\n$\n請先不要啟動系統，並聯絡 gossipred5598@gmail.com。"
+    ${EndIf}
+  ${ElseIf} $0 == 0
     DetailPrint "建立資料庫..."
     ExecWait '"$INSTDIR\scripts\install-database-silent.bat"' $0
     ${If} $0 != 0
       MessageBox MB_ICONEXCLAMATION|MB_OK \
         "資料庫建立失敗（錯誤碼：$0）。$\n$\n安裝完成後請手動執行：$\n$INSTDIR\scripts\install-database.bat"
     ${EndIf}
+  ${ElseIf} $UPGRADE == 1
+    MessageBox MB_ICONEXCLAMATION|MB_OK \
+      "MySQL 沒有啟動成功，資料庫與設定還沒升級。$\n$\n請開啟 XAMPP Control Panel 按 MySQL 的 Start（變綠色），$\n再重新執行一次本安裝程式。"
   ${Else}
     MessageBox MB_ICONEXCLAMATION|MB_OK \
       "MySQL 沒有啟動成功，資料庫先跳過，其餘繼續安裝。$\n$\n安裝完成後請：$\n1. 開啟 XAMPP Control Panel，按 MySQL 的 Start（變綠色）$\n2. 執行 $INSTDIR\scripts\install-database.bat"
