@@ -1,13 +1,13 @@
 {
   "latestVersion": "1.3.0",
   "minimumSupportedVersion": "1.0.0",
-  "releaseDate": "2026-09-24",
+  "releaseDate": "2026-09-27",
   "platforms": {
     "windows": {
       "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.3.0/jig-toolings-network-windows-1.3.0.zip",
-      "sha256": "202460d091db829b47022ee335e9289833e570101d297bc4bc69fc8690d9394b",
+      "sha256": "a19372dc11de2bc91a820e9fe29ec289d7c4321e1ad26663e2e4afcf5334af17",
       "installerUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.3.0/JigToolingsSetup-1.3.0.exe",
-      "installerSha256": "06f060cf3ca2772f62582b26e668f4dc6b0e4a3c84d0f9417dc79f5e6657f5f7"
+      "installerSha256": "7a5847489494dbddab291f6734054eb386a6158df091e8448b3e0214a1c07d53"
     },
     "macos": {
       "packageUrl": "https://github.com/gossipred/jig-toolings-network-distribution/releases/download/v1.3.0/jig-toolings-network-macos-1.3.0.zip",

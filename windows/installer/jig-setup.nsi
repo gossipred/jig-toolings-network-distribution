@@ -30,13 +30,16 @@ RequestExecutionLevel admin
 Unicode True
 SetCompressor   lzma
 
+; ── 變數 ──────────────────────────────────────────────────────────────────────
+Var MYSQLBIN   ; XAMPP 的 MySQL bin 資料夾（C:\xampp\mysql\bin 或 C:\xampp\mariadb\bin）
+
 ; ── MUI2 介面設定 ──────────────────────────────────────────────────────────────
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "歡迎安裝 ${PRODUCT_NAME}"
-!define MUI_WELCOMEPAGE_TEXT "本精靈將引導您完成 ${PRODUCT_NAME} v${PRODUCT_VER} 的安裝。$\r$\n$\r$\n安裝過程將自動設定 MySQL 資料庫並建立系統捷徑，全程約需 3-5 分鐘，請耐心等待。$\r$\n$\r$\n建議關閉其他應用程式後再繼續。"
+!define MUI_WELCOMEPAGE_TEXT "本精靈將引導您完成 ${PRODUCT_NAME} v${PRODUCT_VER} 的安裝。$\r$\n$\r$\n【安裝前請先完成】$\r$\n先執行 XAMPP-installer.exe 安裝 XAMPP（安裝路徑保持預設 C:\xampp）。$\r$\n$\r$\n本精靈會自動設定 MySQL 開機自動啟動、建立資料庫與桌面捷徑，約需 1-2 分鐘。"
 
-!define MUI_LICENSEPAGE_TEXT_TOP "請閱讀以下授權與安裝說明："
+!define MUI_LICENSEPAGE_TEXT_TOP "請閱讀以下安裝說明："
 !define MUI_LICENSEPAGE_BUTTON "我同意(&A)"
 
 !define MUI_FINISHPAGE_RUN "$INSTDIR\START-JIG-NETWORK-APP.bat"
@@ -46,7 +49,7 @@ SetCompressor   lzma
 
 ; ── 精靈頁面 ──────────────────────────────────────────────────────────────────
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "${PACKAGE_DIR}/documents/安裝說明.txt"
+!insertmacro MUI_PAGE_LICENSE "installer-notes.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -57,6 +60,21 @@ SetCompressor   lzma
 ; ── 語言 ──────────────────────────────────────────────────────────────────────
 !insertmacro MUI_LANGUAGE "TradChinese"
 
+; ── 前置檢查：XAMPP 必須先裝好（2026-09-27 起 XAMPP 改成獨立安裝，不再包進本安裝檔）
+Function .onInit
+  StrCpy $MYSQLBIN ""
+  ${If} ${FileExists} "C:\xampp\mysql\bin\mysql.exe"
+    StrCpy $MYSQLBIN "C:\xampp\mysql\bin"
+  ${ElseIf} ${FileExists} "C:\xampp\mariadb\bin\mysql.exe"
+    StrCpy $MYSQLBIN "C:\xampp\mariadb\bin"
+  ${EndIf}
+  ${If} $MYSQLBIN == ""
+    MessageBox MB_ICONEXCLAMATION|MB_OK \
+      "尚未偵測到 XAMPP（C:\xampp）。$\n$\n請先執行 XAMPP-installer.exe 安裝 XAMPP：$\n  • 安裝路徑保持預設 C:\xampp$\n  • 元件只需要 MySQL，其他可以取消勾選$\n$\n裝好後再重新執行本安裝程式。"
+    Abort
+  ${EndIf}
+FunctionEnd
+
 ; ── 安裝 Section ──────────────────────────────────────────────────────────────
 Section "主程式" SecMain
   SectionIn RO
@@ -66,50 +84,62 @@ Section "主程式" SecMain
   SetOutPath "$INSTDIR"
   File /r "${PACKAGE_DIR}/*"
 
-  ; Step 2: 靜默安裝 XAMPP（MySQL）
-  DetailPrint "正在安裝 MySQL (XAMPP)，約需 1-2 分鐘，請勿關閉視窗..."
-  ExecWait '"$INSTDIR\XAMPP-installer.exe" /S' $0
+  ; Step 2: 確保 MySQL 在跑。已在跑（例如客戶從 XAMPP Control Panel 按過 Start）就不動它；
+  ; 沒在跑才註冊成 Windows 服務（開機自動啟動，伺服器不用每次手動按 Start）再啟動。
+  DetailPrint "檢查 MySQL..."
+  nsExec::Exec '"$MYSQLBIN\mysql.exe" -u root -e "SELECT 1"'
+  Pop $0
   ${If} $0 != 0
-    MessageBox MB_ICONEXCLAMATION|MB_OK \
-      "MySQL 安裝失敗（錯誤碼：$0）。$\n$\n安裝完成後請手動執行：$\n$INSTDIR\XAMPP-installer.exe"
-  ${EndIf}
-
-  ; Step 3: 等待 MySQL 服務就緒
-  DetailPrint "等待 MySQL 服務啟動..."
-  Sleep 8000
-  ExecWait 'net start mysql' $0
-  ${If} $0 != 0
-    ExecWait 'net start mariadb' $0
-    ${If} $0 != 0
-      MessageBox MB_ICONEXCLAMATION|MB_YESNO \
-        "MySQL 服務無法自動啟動。$\n$\n建議：$\n1. 點「否」結束安裝$\n2. 手動開啟 XAMPP Control Panel 啟動 MySQL$\n3. 再重新執行此安裝程式$\n$\n是否仍要繼續安裝？" \
-        IDYES +2
-      Abort "使用者取消安裝"
+    nsExec::Exec 'sc query mysql'
+    Pop $1
+    ${If} $1 != 0
+      DetailPrint "將 MySQL 註冊為 Windows 服務（開機自動啟動）..."
+      nsExec::ExecToLog '"$MYSQLBIN\mysqld.exe" --install mysql --defaults-file="$MYSQLBIN\my.ini"'
+      Pop $1
+      ${If} $1 == 0
+        WriteRegDWORD HKLM "${REG_KEY}" "RegisteredMySQLService" 1
+      ${EndIf}
     ${EndIf}
+    DetailPrint "啟動 MySQL 服務..."
+    nsExec::ExecToLog 'net start mysql'
+    Pop $1
+    ${For} $2 1 15
+      Sleep 2000
+      nsExec::Exec '"$MYSQLBIN\mysql.exe" -u root -e "SELECT 1"'
+      Pop $0
+      ${If} $0 == 0
+        ${ExitFor}
+      ${EndIf}
+    ${Next}
   ${EndIf}
-  Sleep 3000
+  WriteRegStr HKLM "${REG_KEY}" "MySQLBin" "$MYSQLBIN"
 
-  ; Step 4: 建立資料庫
-  DetailPrint "建立資料庫..."
-  ExecWait '"$INSTDIR\scripts\install-database-silent.bat"' $0
-  ${If} $0 != 0
+  ; Step 3: 建立資料庫（MySQL 沒起來就跳過，提示手動補做）
+  ${If} $0 == 0
+    DetailPrint "建立資料庫..."
+    ExecWait '"$INSTDIR\scripts\install-database-silent.bat"' $0
+    ${If} $0 != 0
+      MessageBox MB_ICONEXCLAMATION|MB_OK \
+        "資料庫建立失敗（錯誤碼：$0）。$\n$\n安裝完成後請手動執行：$\n$INSTDIR\scripts\install-database.bat"
+    ${EndIf}
+  ${Else}
     MessageBox MB_ICONEXCLAMATION|MB_OK \
-      "資料庫建立失敗（錯誤碼：$0）。$\n$\n請確認 MySQL 已啟動，再手動執行：$\n$INSTDIR\scripts\install-database.bat"
+      "MySQL 沒有啟動成功，資料庫先跳過，其餘繼續安裝。$\n$\n安裝完成後請：$\n1. 開啟 XAMPP Control Panel，按 MySQL 的 Start（變綠色）$\n2. 執行 $INSTDIR\scripts\install-database.bat"
   ${EndIf}
 
-  ; Step 5: 桌面捷徑
+  ; Step 4: 桌面捷徑
   DetailPrint "建立桌面捷徑..."
   CreateShortcut "$DESKTOP\治具管理系統.lnk" "$INSTDIR\START-JIG-NETWORK-APP.bat"
 
-  ; Step 6: 開始功能表
+  ; Step 5: 開始功能表
   CreateDirectory "$SMPROGRAMS\治具管理系統"
   CreateShortcut "$SMPROGRAMS\治具管理系統\啟動系統.lnk"   "$INSTDIR\START-JIG-NETWORK-APP.bat"
   CreateShortcut "$SMPROGRAMS\治具管理系統\解除安裝.lnk"   "$INSTDIR\Uninstall.exe"
 
-  ; Step 7: 寫入解除安裝器
+  ; Step 6: 寫入解除安裝器
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-  ; Step 8: 登錄 Add/Remove Programs
+  ; Step 7: 登錄 Add/Remove Programs
   WriteRegStr   HKLM "${REG_KEY}" "DisplayName"     "${PRODUCT_NAME} v${PRODUCT_VER}"
   WriteRegStr   HKLM "${REG_KEY}" "DisplayVersion"  "${PRODUCT_VER}"
   WriteRegStr   HKLM "${REG_KEY}" "Publisher"       "${PRODUCT_PUBLISHER}"
@@ -121,6 +151,17 @@ SectionEnd
 
 ; ── 解除安裝 Section ──────────────────────────────────────────────────────────
 Section "Uninstall"
+  ; 只移除「我們自己註冊」的 MySQL 服務；客戶原本就設好的服務不碰
+  ReadRegDWORD $0 HKLM "${REG_KEY}" "RegisteredMySQLService"
+  ReadRegStr   $1 HKLM "${REG_KEY}" "MySQLBin"
+  ${If} $0 == 1
+  ${AndIf} $1 != ""
+    nsExec::Exec 'net stop mysql'
+    Pop $2
+    nsExec::Exec '"$1\mysqld.exe" --remove mysql'
+    Pop $2
+  ${EndIf}
+
   ; 刪除程式檔案（保留客戶資料：uploads\ backups\ logs\）
   RMDir /r "$INSTDIR\app"
   RMDir /r "$INSTDIR\runtime"
@@ -130,7 +171,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\license"
   Delete "$INSTDIR\*.bat"
   Delete "$INSTDIR\*.txt"
-  Delete "$INSTDIR\XAMPP-installer.exe"
+  Delete "$INSTDIR\XAMPP-installer.exe"   ; v1.3.0 以前的安裝檔會附帶這個檔案
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
 

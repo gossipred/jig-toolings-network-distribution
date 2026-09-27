@@ -5,6 +5,8 @@
 # Usage:
 #   bash windows/installer/release-windows.sh
 #   bash windows/installer/release-windows.sh /path/to/core-repo
+#   SKIP_MAVEN=1 bash windows/installer/release-windows.sh   # packaging-only fix, reuse existing jar
+#                                                            # (no mvn, production server on 8080 untouched)
 #
 # Output:
 #   windows/installer/dist/jig-toolings-network-windows-<VERSION>.zip
@@ -44,6 +46,10 @@ echo " Output     : $OUTPUT"
 echo "============================================================"
 echo ""
 
+if [ "${SKIP_MAVEN:-0}" = "1" ]; then
+    echo "[0-1/5] SKIP_MAVEN=1 — reusing existing jar, production server left running."
+    echo ""
+else
 # ── Step 0: Stop running Spring Boot to avoid JVM classloader corruption ─────
 echo "[0/5] Stopping Spring Boot (if running)..."
 SPRING_PID=$(lsof -t -iTCP:8080 2>/dev/null || true)
@@ -61,6 +67,7 @@ cd "$CORE_REPO"
 /opt/homebrew/bin/mvn -Dmaven.repo.local=.m2/repository package -q
 echo "[1/5] Maven build OK."
 echo ""
+fi
 
 # ── Step 2: Assemble package directory ───────────────────────────────────────
 echo "[2/5] Assembling package directory..."
@@ -77,18 +84,16 @@ done
 echo "[3/5] Launcher sync OK."
 echo ""
 
-# ── Step 3.5: Copy XAMPP installer and Java runtime ──────────────────────────
-echo "[3.5] Copying XAMPP-installer.exe and runtime/ from mysql-windows..."
+# ── Step 3.5: Copy Java runtime ──────────────────────────────────────────────
+# Since 2026-09-27 XAMPP is NOT bundled in the zip/EXE: passing NSIS-style /S to
+# XAMPP's VMware InstallBuilder installer failed (exit 1) on a real Windows 11 test.
+# XAMPP-installer.exe is now uploaded as its own GitHub Release asset (Step 5b) and
+# customers install it first, then run JigToolingsSetup (which checks C:\xampp).
+echo "[3.5] Copying runtime/ from mysql-windows (XAMPP no longer bundled)..."
 
 XAMPP_SRC="$MYSQL_PACKAGE_DIR/XAMPP-installer.exe"
 RUNTIME_SRC="$MYSQL_PACKAGE_DIR/runtime"
-
-if [ -f "$XAMPP_SRC" ]; then
-    cp "$XAMPP_SRC" "$PACKAGE_DIR/XAMPP-installer.exe"
-    echo "      XAMPP-installer.exe copied ($(du -sh "$XAMPP_SRC" | cut -f1))"
-else
-    echo "      [WARN] XAMPP-installer.exe not found at $XAMPP_SRC — skipped"
-fi
+rm -f "$PACKAGE_DIR/XAMPP-installer.exe"
 
 if [ -d "$RUNTIME_SRC" ]; then
     rm -rf "$PACKAGE_DIR/runtime"
@@ -113,7 +118,8 @@ zip -r "$OUTPUT" . \
     --exclude "logs/*" \
     --exclude "license/*.lic" \
     --exclude "*/build-*.sh" \
-    --exclude "app/jig-toolings-management.jar"
+    --exclude "app/jig-toolings-management.jar" \
+    --exclude "XAMPP-installer.exe"
 
 SHA256=$(shasum -a 256 "$OUTPUT" | awk '{print $1}')
 ZIP_SIZE=$(du -sh "$OUTPUT" | cut -f1)
@@ -210,13 +216,23 @@ PYEOF
 echo "[5/5] Manifests updated."
 echo ""
 
-# ── Step 5b: Upload EXE to GitHub Release ────────────────────────────────────
-if [ -n "$EXE_SHA256" ] && [ -f "$EXE_OUTPUT" ]; then
-    echo "[5b] Uploading EXE to GitHub Release v${VERSION}..."
-    gh release upload "v${VERSION}" "$EXE_OUTPUT" \
+# ── Step 5b: Upload ZIP, EXE and standalone XAMPP installer to GitHub Release ─
+# Release v${VERSION} must already exist (gh release create) — upload uses --clobber.
+if gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
+    echo "[5b] Uploading assets to GitHub Release v${VERSION}..."
+    UPLOADS=("$OUTPUT")
+    [ -n "$EXE_SHA256" ] && [ -f "$EXE_OUTPUT" ] && UPLOADS+=("$EXE_OUTPUT")
+    [ -f "$XAMPP_SRC" ] && UPLOADS+=("$XAMPP_SRC#XAMPP-installer.exe")
+    gh release upload "v${VERSION}" "${UPLOADS[@]}" \
         --repo gossipred/jig-toolings-network-distribution \
         --clobber
-    echo "[5b] EXE uploaded."
+    echo "[5b] Uploaded: ${#UPLOADS[@]} file(s)."
+    echo ""
+else
+    echo "[5b] Release v${VERSION} not found — create it first, then re-run or upload manually:"
+    echo "     $OUTPUT"
+    [ -f "$EXE_OUTPUT" ] && echo "     $EXE_OUTPUT"
+    echo "     $XAMPP_SRC (as XAMPP-installer.exe)"
     echo ""
 fi
 
@@ -238,6 +254,5 @@ echo "   2. cd $DIST_REPO"
 echo "   3. git add shared/latest.json releases/$VERSION/"
 echo "   4. git commit -m \"Release v${VERSION} — Windows package\""
 echo "   5. git push origin main"
-echo "   6. Create GitHub Release v${VERSION} and upload:"
-echo "      $ZIP_NAME"
+echo "   6. Confirm GitHub Release v${VERSION} has: $ZIP_NAME, $EXE_NAME, XAMPP-installer.exe"
 echo "============================================================"

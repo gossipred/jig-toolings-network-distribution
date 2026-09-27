@@ -53,7 +53,7 @@ jig-toolings-network-windows-VERSION.zip
   操作說明.txt                   ← Chinese operation guide
   README-FIRST.md
   START-JIG-NETWORK-APP.bat
-  XAMPP-installer.exe            ← bundled separately (gitignored, ~150MB)
+  (XAMPP-installer.exe is NOT in the package since 2026-09-27 — separate Release asset)
   app/
     jig-management-system.jar
     application.properties
