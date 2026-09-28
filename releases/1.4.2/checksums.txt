@@ -1,0 +1,3 @@
+78ddafa7586a096764f172e97a441588c835ac450c2bb6e806a51d75bbf3fc21  jig-toolings-network-windows-1.4.2.zip
+d29a3411ad2ce9231a0813295af84906a55e3b86d949177a0d9cd7ca0ff604e5  JigToolingsSetup-1.4.2.exe
+c7dd90c37e9416b9dd56ac904456770f56d1d5d61be5b0fd2ffe800cb4deeb62  jig-toolings-network-macos-1.4.2.zip

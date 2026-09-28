@@ -1,6 +1,6 @@
 ﻿================================================================
   Jig & Toolings Management System
-  Windows Network Edition - Installation Guide  v1.4.1
+  Windows Network Edition - Installation Guide  v1.4.2
   * Please read this guide BEFORE installing to avoid most errors
   中文版：INSTALL-GUIDE-Windows-zh-TW.txt
 ================================================================
