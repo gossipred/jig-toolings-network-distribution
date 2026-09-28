@@ -43,3 +43,11 @@ So, for each change:
 2. `gh release create` with all assets
 3. download and compare sha256 with `latest.json`
 4. push `shared/latest.json` last (otherwise customers see the update before the files exist)
+
+## After publishing
+
+- [ ] Update the public release history page https://aurastudio.studio/software/updates/ —
+      add the version at the top of `NETWORK` in `Claude project/docs/jig-software-page/build_changelog.py`,
+      run it and update WordPress page 2651 (steps in that folder's README). Standalone releases go in `STANDALONE`.
+- [ ] Restart the live server on the new jar (`launchctl kickstart -k gui/501/com.jj.jig-spring`) so it does not report an update to itself
+- [ ] Test machines: after a rollback test, delete the fake `database/migration-*-vmtest-*.sql` files, or the next real update will fail on them
