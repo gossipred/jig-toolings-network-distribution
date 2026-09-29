@@ -189,5 +189,25 @@ try {
     exit 2
 }
 
+# -- 5. Shortcut icon (cosmetic, best effort: never fails the update) --
+# Shortcuts made by older installers show the generic .bat icon. Point the ones
+# that start this installation at the app icon shipped in app\.
+try {
+    $icon = [IO.Path]::Combine($PackageDir, "app", "jig-network.ico")
+    $target = [IO.Path]::Combine($PackageDir, "START-JIG-NETWORK-APP.bat")
+    if (Test-Path $icon) {
+        $shell = New-Object -ComObject WScript.Shell
+        $folders = "Desktop", "CommonDesktopDirectory", "Programs", "CommonPrograms" |
+            ForEach-Object { [Environment]::GetFolderPath($_) } | Where-Object { $_ -and (Test-Path $_) }
+        foreach ($lnk in (Get-ChildItem -Path $folders -Filter *.lnk -Recurse -Depth 1 -ErrorAction SilentlyContinue)) {
+            $sc = $shell.CreateShortcut($lnk.FullName)
+            if ($sc.TargetPath -ieq $target -and $sc.IconLocation -notlike "*jig-network.ico*") {
+                $sc.IconLocation = "$icon,0"
+                $sc.Save()
+            }
+        }
+    }
+} catch { }
+
 Write-Host "    Now at version $($new['app.version'])."
 exit 0

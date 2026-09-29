@@ -39,6 +39,8 @@ Var BACKUPDIR
 
 ; ── MUI2 介面設定 ──────────────────────────────────────────────────────────────
 !define MUI_ABORTWARNING
+!define MUI_ICON   "${PACKAGE_DIR}/app/jig-network.ico"
+!define MUI_UNICON "${PACKAGE_DIR}/app/jig-network.ico"
 
 !define MUI_WELCOMEPAGE_TITLE "歡迎安裝 ${PRODUCT_NAME}"
 !define MUI_WELCOMEPAGE_TEXT "本精靈將引導您完成 ${PRODUCT_NAME} v${PRODUCT_VER} 的安裝。$\r$\n$\r$\n【安裝前請先完成】$\r$\n先執行 XAMPP-installer.exe 安裝 XAMPP（安裝路徑保持預設 C:\xampp）。$\r$\n$\r$\n本精靈會自動設定 MySQL 開機自動啟動、建立資料庫與桌面捷徑，約需 1-2 分鐘。"
@@ -197,11 +199,11 @@ Section "主程式" SecMain
 
   ; Step 4: 桌面捷徑
   DetailPrint "建立桌面捷徑..."
-  CreateShortcut "$DESKTOP\治具管理系統.lnk" "$INSTDIR\START-JIG-NETWORK-APP.bat"
+  CreateShortcut "$DESKTOP\治具管理系統.lnk" "$INSTDIR\START-JIG-NETWORK-APP.bat" "" "$INSTDIR\app\jig-network.ico" 0
 
   ; Step 5: 開始功能表
   CreateDirectory "$SMPROGRAMS\治具管理系統"
-  CreateShortcut "$SMPROGRAMS\治具管理系統\啟動系統.lnk"   "$INSTDIR\START-JIG-NETWORK-APP.bat"
+  CreateShortcut "$SMPROGRAMS\治具管理系統\啟動系統.lnk"   "$INSTDIR\START-JIG-NETWORK-APP.bat" "" "$INSTDIR\app\jig-network.ico" 0
   CreateShortcut "$SMPROGRAMS\治具管理系統\解除安裝.lnk"   "$INSTDIR\Uninstall.exe"
 
   ; Step 6: 寫入解除安裝器
@@ -212,6 +214,7 @@ Section "主程式" SecMain
   WriteRegStr   HKLM "${REG_KEY}" "DisplayVersion"  "${PRODUCT_VER}"
   WriteRegStr   HKLM "${REG_KEY}" "Publisher"       "${PRODUCT_PUBLISHER}"
   WriteRegStr   HKLM "${REG_KEY}" "InstallLocation" "$INSTDIR"
+  WriteRegStr   HKLM "${REG_KEY}" "DisplayIcon"     "$INSTDIR\app\jig-network.ico"
   WriteRegStr   HKLM "${REG_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegDWORD HKLM "${REG_KEY}" "NoModify" 1
   WriteRegDWORD HKLM "${REG_KEY}" "NoRepair" 1
