@@ -30,12 +30,12 @@ test_db_load_defaults_for_old_props() {
 }
 
 test_ping_with_root_no_password() {
-    reset_db; local d="$WORK_ROOT/ping"; make_install "$d" root ""
+    reset_db || return 1; local d="$WORK_ROOT/ping"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"; jig_db_load "$d" && jig_db_ping
 }
 
 test_ping_custom_password_special_chars() {
-    reset_db
+    reset_db || return 1
     root_sql <<'SQL'
 CREATE DATABASE web_fixture_management;
 CREATE USER 'custom_user'@'127.0.0.1' IDENTIFIED BY 'p@ss w$rd"x''y#z';
@@ -81,7 +81,7 @@ test_password_only_in_env_of_that_command() {
 test_localhost_uses_tcp_port() {
     # "localhost" must not fall back to the Unix socket (that would be the
     # production server on port 3306); the query is read-only either way.
-    reset_db; local d="$WORK_ROOT/lh"; make_install "$d" root ""
+    reset_db || return 1; local d="$WORK_ROOT/lh"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"
     jig_props_set "$d/app/application.properties" spring.datasource.url "jdbc:mysql://localhost:$TEST_PORT/web_fixture_management"
     jig_db_load "$d" || return 1
@@ -89,7 +89,7 @@ test_localhost_uses_tcp_port() {
 }
 
 test_client_option_files_ignored() {
-    reset_db; local d="$WORK_ROOT/cnf"; make_install "$d" root ""
+    reset_db || return 1; local d="$WORK_ROOT/cnf"; make_install "$d" root ""
     local fakehome="$WORK_ROOT/home"; mkdir -p "$fakehome"
     printf '[client]\npassword=wrongpw\nuser=nobody\n' > "$fakehome/.my.cnf"
     . "$MAC_SCRIPTS/jig-db.sh"; jig_db_load "$d" || return 1
@@ -139,7 +139,7 @@ test_mysql_bin_override_must_exist() {
 app_user_count() { root_sql -e "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app'"; }
 
 test_ensure_account_switches_root_install() {
-    reset_db; install_v143_db
+    reset_db || return 1; install_v143_db || return 1
     local d="$WORK_ROOT/acct"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
     jig_db_ensure_app_account "$d" || return 1
@@ -155,7 +155,7 @@ test_ensure_account_switches_root_install() {
 }
 
 test_ensure_account_has_no_global_privileges() {
-    reset_db; install_v143_db
+    reset_db || return 1; install_v143_db || return 1
     local d="$WORK_ROOT/priv"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
     jig_db_ensure_app_account "$d" || return 1
@@ -163,7 +163,7 @@ test_ensure_account_has_no_global_privileges() {
 }
 
 test_ensure_account_keeps_custom_user() {
-    reset_db; install_v143_db
+    reset_db || return 1; install_v143_db || return 1
     local d="$WORK_ROOT/custom"; make_install "$d" custom_user "secret"
     . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
     jig_db_ensure_app_account "$d" || return 1
@@ -172,7 +172,7 @@ test_ensure_account_keeps_custom_user() {
 }
 
 test_ensure_account_when_user_already_exists() {
-    reset_db; install_v143_db
+    reset_db || return 1; install_v143_db || return 1
     root_sql -e "CREATE USER 'jig_app'@'localhost' IDENTIFIED BY 'old'; CREATE USER 'jig_app'@'127.0.0.1' IDENTIFIED BY 'old'; CREATE USER 'jig_app'@'::1' IDENTIFIED BY 'old';"
     local d="$WORK_ROOT/rerun"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
@@ -197,12 +197,22 @@ test_new_password_not_on_command_line() {
 }
 
 test_ensure_account_failure_leaves_settings() {
-    reset_db   # no database: the account check (SELECT FROM users) must fail
+    reset_db || return 1   # no database: the account check (SELECT FROM users) must fail
     local d="$WORK_ROOT/fail"; make_install "$d" root ""
     . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
     if jig_db_ensure_app_account "$d"; then echo "    expected failure"; return 1; fi
     check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "root" "settings unchanged" &&
     check "$(app_user_count)" "0" "new account removed again"
+}
+
+test_install_database_creates_app_account() {
+    reset_db || return 1
+    local d="$WORK_ROOT/fresh"; make_install "$d" root ""
+    bash "$d/scripts/install-database.command" < /dev/null > "$WORK_ROOT/install.out" 2>&1 || { cat "$WORK_ROOT/install.out"; return 1; }
+    local migrations; migrations="$(ls "$d"/database/migration-*.sql | wc -l | tr -d ' ')"
+    check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "jig_app" "settings use jig_app" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "seed users" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.schema_migrations')" "$migrations" "all migrations recorded"
 }
 
 run_test test_sandbox_is_not_production
@@ -225,4 +235,5 @@ run_test test_ensure_account_keeps_custom_user
 run_test test_ensure_account_when_user_already_exists
 run_test test_ensure_account_failure_leaves_settings
 run_test test_new_password_not_on_command_line
+run_test test_install_database_creates_app_account
 finish
