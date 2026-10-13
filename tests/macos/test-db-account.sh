@@ -215,6 +215,48 @@ test_install_database_creates_app_account() {
     check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.schema_migrations')" "$migrations" "all migrations recorded"
 }
 
+# make_update <name>: a v1.4.3 install using root, plus a v2.0.0 package, plus
+# the file backup UPDATE-JIG-NETWORK-APP.command makes before apply-update.
+make_update() {
+    PKG="$WORK_ROOT/$1/installed"; SRC="$WORK_ROOT/$1/new"; BK="$WORK_ROOT/$1/backup"
+    make_install "$PKG" root "" 1.4.3
+    make_install "$SRC" root "" 2.0.0
+    mkdir -p "$BK"; cp -R "$PKG/app" "$BK/app"; cp -R "$PKG/scripts" "$BK/scripts"
+}
+
+test_update_switches_to_app_account() {
+    reset_db || return 1; install_v143_db || return 1; make_update upd
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/upd.out" 2>&1
+    local code=$?
+    check "$code" "0" "exit code (log: $WORK_ROOT/upd.out)" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.username)" "jig_app" "switched to jig_app" &&
+    check "$(prop_of "$PKG/app/application.properties" app.version)" "2.0.0" "version updated" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "data kept" &&
+    [ -s "$BK/database-web_fixture_management.sql" ]
+}
+
+test_update_rollback_removes_new_account() {
+    reset_db || return 1; install_v143_db || return 1; make_update rb
+    echo "THIS IS NOT SQL;" > "$SRC/database/migration-2099-01-01-broken.sql"
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/rb.out" 2>&1
+    local code=$?
+    check "$code" "3" "exit code 3 = rolled back (log: $WORK_ROOT/rb.out)" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.username)" "root" "settings back to root" &&
+    check "$(prop_of "$PKG/app/application.properties" app.version)" "1.4.3" "version back" &&
+    check "$(app_user_count)" "0" "jig_app removed" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "data intact"
+}
+
+test_update_keeps_existing_app_account() {
+    reset_db || return 1; install_v143_db || return 1; make_update keep
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$PKG" > /dev/null || return 1
+    cp "$PKG/app/application.properties" "$BK/app/application.properties"
+    local before; before="$(prop_of "$PKG/app/application.properties" spring.datasource.password)"
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/keep.out" 2>&1 || return 1
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.password)" "$before" "password unchanged on a second update"
+}
+
 run_test test_sandbox_is_not_production
 run_test test_db_load_parses_props
 run_test test_db_load_defaults_for_old_props
@@ -236,4 +278,7 @@ run_test test_ensure_account_when_user_already_exists
 run_test test_ensure_account_failure_leaves_settings
 run_test test_new_password_not_on_command_line
 run_test test_install_database_creates_app_account
+run_test test_update_switches_to_app_account
+run_test test_update_rollback_removes_new_account
+run_test test_update_keeps_existing_app_account
 finish

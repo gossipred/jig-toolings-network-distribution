@@ -5,6 +5,7 @@
 #   2. Replace program files; keep license/, uploads/, logs/, backups/
 #   3. Merge app/application.properties: keep the customer's values (port,
 #      database password...), take the new app.version, add new settings
+#   3b. Switch the database account from root to jig_app (v2.0, jig-db-account.sh)
 #   4. Apply database migrations that have not run yet (schema_migrations)
 # Usage: apply-update.sh <new_package_dir> <installed_package_dir> <backup_dir>
 # If a step after the database backup fails, the previous version is put back
@@ -22,51 +23,31 @@ BACKUP_DIR="$3"
 PROPS="$PKG/app/application.properties"
 NEW_PROPS="$SRC/app/application.properties"
 
-prop() {
-    awk -v k="$2" '
-        /^[ \t]*[#!]/ { next }
-        { key = $0; sub(/=.*/, "", key); gsub(/^[ \t]+|[ \t]+$/, "", key)
-          if (key == k && index($0, "=") > 0) { v = substr($0, index($0, "=") + 1); gsub(/^[ \t]+|[ \t]+$/, "", v); val = v } }
-        END { print val }' "$1"
-}
+. "$SRC/scripts/jig-db.sh"
+. "$SRC/scripts/jig-db-account.sh"
 
 if [ ! -f "$PROPS" ] || [ ! -f "$NEW_PROPS" ]; then
     echo "[ERROR] application.properties not found (installed or new package)."
     return 1
 fi
 
-NEW_VERSION="$(prop "$NEW_PROPS" app.version)"
-DB_USER="$(prop "$PROPS" spring.datasource.username)"; [ -z "$DB_USER" ] && DB_USER=root
-DB_PASS="$(prop "$PROPS" spring.datasource.password)"
-DB_NAME="$(prop "$PROPS" spring.datasource.url | sed -n 's|^jdbc:mysql://[^/]*/\([^?;]*\).*|\1|p')"
-[ -z "$DB_NAME" ] && DB_NAME=web_fixture_management
-
-MYSQL_BIN="${JIG_MYSQL_BIN:-}"
-if [ -z "$MYSQL_BIN" ]; then
-    for d in /Applications/XAMPP/bin /Applications/XAMPP/xamppfiles/bin; do
-        [ -x "$d/mysql" ] && MYSQL_BIN="$d" && break
-    done
-fi
-if [ -z "$MYSQL_BIN" ] && command -v mysql >/dev/null 2>&1; then
-    MYSQL_BIN="$(dirname "$(command -v mysql)")"
-fi
-if [ -z "$MYSQL_BIN" ]; then
+NEW_VERSION="$(jig_prop "$NEW_PROPS" app.version)"
+if ! jig_db_load "$PKG"; then
     echo "[ERROR] MySQL (XAMPP) not found."
     return 1
 fi
-if [ -n "$DB_PASS" ]; then export MYSQL_PWD="$DB_PASS"; fi
-sql() { "$MYSQL_BIN/mysql" -u "$DB_USER" --default-character-set=utf8mb4 "$@"; }
+DB_NAME="$JIG_DB_NAME"
+sql() { jig_mysql "$@"; }
 
 # -- 1. Database backup (nothing has changed yet, so failing here is safe) --
 echo "    Backing up database $DB_NAME..."
-if ! sql -N -B -e "SELECT 1" >/dev/null 2>&1; then
+if ! jig_db_ping; then
     echo "[ERROR] MySQL is not responding. Start MySQL and run the update again."
     return 1
 fi
 DUMP="$BACKUP_DIR/database-$DB_NAME.sql"
 mkdir -p "$BACKUP_DIR"
-if ! "$MYSQL_BIN/mysqldump" -u "$DB_USER" --default-character-set=utf8mb4 --single-transaction \
-        --result-file="$DUMP" "$DB_NAME" || [ ! -s "$DUMP" ]; then
+if ! jig_mysqldump --result-file="$DUMP" "$DB_NAME" || [ ! -s "$DUMP" ]; then
     echo "[ERROR] Database backup failed. Nothing was changed."
     return 1
 fi
@@ -84,6 +65,10 @@ fail() {
             ok=0
         fi
     done
+    if [ "${JIG_DB_ACCOUNT_CREATED:-0}" = "1" ]; then
+        jig_db_drop_app_account
+        echo "    Removed the database account created by this update."
+    fi
     if ! sql "$DB_NAME" < "$DUMP" > /dev/null 2>&1; then
         echo "[ERROR] Could not restore the database from $DUMP"
         ok=0
@@ -136,6 +121,10 @@ awk -v ver="$NEW_VERSION" '
         for (i = 1; i <= n; i++) { l = lines[i]; if (l ~ /^[ \t]*app\.version[ \t]*=/) l = "app.version=" ver; print l }
         if (m > 0) { print ""; print "# Added by update to v" ver; for (i = 1; i <= m; i++) print add[i] }
     }' "$PROPS" "$NEW_PROPS" > "$PROPS.tmp" && mv "$PROPS.tmp" "$PROPS" || { fail "Could not update settings"; return $?; }
+
+# -- 3b. Dedicated database account (v2.0) ---------------------------------
+echo "    Checking the database account..."
+jig_db_ensure_app_account "$PKG" || { fail "Could not set up the database account"; return $?; }
 
 # -- 4. Database migrations ----------------------------------------------
 HAS_TABLE="$(sql -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='schema_migrations'" 2>&1)" \
