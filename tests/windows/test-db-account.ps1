@@ -63,7 +63,13 @@ function Test-PingRootNoPassword {
 }
 function Test-SpecialCharPassword {
     Reset-Db
-    RootSql "CREATE DATABASE web_fixture_management; CREATE USER 'custom_user'@'127.0.0.1' IDENTIFIED BY 'p@ss w`$rd`"x'; GRANT ALL PRIVILEGES ON web_fixture_management.* TO 'custom_user'@'127.0.0.1';" | Out-Null
+    $sqlFile = Join-Path $Work "special-account.sql"
+    try {
+        Set-Content -Path $sqlFile -Value "CREATE DATABASE web_fixture_management; CREATE USER 'custom_user'@'127.0.0.1' IDENTIFIED BY 'p@ss w`$rd`"x'; GRANT ALL PRIVILEGES ON web_fixture_management.* TO 'custom_user'@'127.0.0.1';"
+        RootSqlFile $sqlFile
+    } finally {
+        Remove-Item $sqlFile -Force
+    }
     $d = Join-Path $Work "special"; New-Install $d "custom_user" 'p@ss w$rd"x'
     Check (Test-JigDb (Get-JigDbConfig $d $Bin)) $true "special-character password connects"
 }
