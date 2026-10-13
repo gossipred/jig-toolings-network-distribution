@@ -179,7 +179,21 @@ test_ensure_account_when_user_already_exists() {
     jig_db_ensure_app_account "$d" || return 1
     local pw; pw="$(prop_of "$d/app/application.properties" spring.datasource.password)"
     check "$JIG_DB_ACCOUNT_CREATED" "0" "not marked as created" &&
-    check "$(MYSQL_PWD="$pw" "$TEST_BIN/mysql" --no-defaults -h 127.0.0.1 -P "$TEST_PORT" -u jig_app -N -B -e 'SELECT 1')" "1" "password was reset"
+    check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "jig_app" "username switched" &&
+    check "$(MYSQL_PWD="$pw" "$TEST_BIN/mysql" --no-defaults -h 127.0.0.1 -P "$TEST_PORT" -u jig_app -N -B -e 'SELECT COUNT(*) FROM users' web_fixture_management)" "4" "password was reset and the data is readable"
+}
+
+test_new_password_not_on_command_line() {
+    # A stub mysql records every call's arguments; the new jig_app password
+    # must never be among them (others could see it with ps).
+    local d="$WORK_ROOT/argv" bin="$WORK_ROOT/argvbin"; make_install "$d" root ""
+    mkdir -p "$bin"
+    printf '#!/bin/bash\nprintf "%%s\\n" "$@" >> "$(dirname "$0")/args"\necho 0\n' > "$bin/mysql"; chmod +x "$bin/mysql"
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    JIG_MYSQL_BIN="$bin" jig_db_ensure_app_account "$d" > /dev/null || return 1
+    local pw; pw="$(prop_of "$d/app/application.properties" spring.datasource.password)"
+    check "${#pw}" "24" "password saved" &&
+    ! grep -q -- "$pw" "$bin/args" || { echo "    new password found in mysql arguments"; return 1; }
 }
 
 test_ensure_account_failure_leaves_settings() {
@@ -210,4 +224,5 @@ run_test test_ensure_account_has_no_global_privileges
 run_test test_ensure_account_keeps_custom_user
 run_test test_ensure_account_when_user_already_exists
 run_test test_ensure_account_failure_leaves_settings
+run_test test_new_password_not_on_command_line
 finish

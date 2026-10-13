@@ -30,17 +30,17 @@ jig_db_ensure_app_account() {
     fi
     pw="$(jig_random_password)"
     [ "${#pw}" -eq 24 ] || { echo "[ERROR] Could not generate a database password."; return 1; }
-    existed="$(jig_mysql -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE User='$JIG_APP_DB_USER'" 2>&1)" ||
-        { echo "[ERROR] Cannot read the MySQL accounts: $existed"; return 1; }
+    existed="$(jig_mysql -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE User='$JIG_APP_DB_USER'")" ||
+        { echo "[ERROR] Cannot read the MySQL accounts."; return 1; }
     [ "$existed" = "0" ] && JIG_DB_ACCOUNT_CREATED=1
     for h in localhost 127.0.0.1 ::1; do
-        sql="$sql CREATE USER IF NOT EXISTS '$JIG_APP_DB_USER'@'$h' IDENTIFIED BY '$pw';
-            ALTER USER '$JIG_APP_DB_USER'@'$h' IDENTIFIED BY '$pw';
+        sql="$sql CREATE OR REPLACE USER '$JIG_APP_DB_USER'@'$h' IDENTIFIED BY '$pw';
             GRANT ALL PRIVILEGES ON \`$JIG_DB_NAME\`.* TO '$JIG_APP_DB_USER'@'$h';"
     done
-    # Create the account, prove it can read the real data, then save it in the
-    # settings (made owner-only first, since it will hold the password).
-    if jig_mysql -e "$sql" &&
+    # Create the account (SQL on stdin: the password must not show up in ps),
+    # prove it can read the real data, then save it in the settings (made
+    # owner-only first, since it will hold the password).
+    if printf '%s\n' "$sql" | jig_mysql &&
        jig_db_run_as "$JIG_APP_DB_USER" "$pw" mysql -N -B -e "SELECT COUNT(*) FROM users" "$JIG_DB_NAME" >/dev/null 2>&1 &&
        chmod 600 "$props" &&
        jig_props_set "$props" spring.datasource.username "$JIG_APP_DB_USER" &&
