@@ -22,63 +22,28 @@ $Utf8 = New-Object Text.UTF8Encoding $false
 $PropsPath = [IO.Path]::Combine($PackageDir, "app", "application.properties")
 $NewPropsPath = [IO.Path]::Combine($Source, "app", "application.properties")
 
-function Read-Props([string]$path) {
-    $map = [ordered]@{}
-    foreach ($line in [IO.File]::ReadAllLines($path)) {
-        if ($line -match '^\s*([^#!=\s][^=]*?)\s*=(.*)$') { $map[$Matches[1]] = $Matches[2].Trim() }
-    }
-    return $map
-}
-
-function Find-MySqlBin {
-    foreach ($d in @("C:\xampp\mysql\bin", "C:\xampp\mariadb\bin")) {
-        if (Test-Path (Join-Path $d "mysql.exe")) { return $d }
-    }
-    $cmd = Get-Command mysql.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return (Split-Path $cmd.Source) }
-    return $null
-}
-
 if (-not (Test-Path $PropsPath) -or -not (Test-Path $NewPropsPath)) {
     Write-Host "[ERROR] application.properties not found (installed or new package)."
     exit 1
 }
 
-$old = Read-Props $PropsPath
-$new = Read-Props $NewPropsPath
-$DbUser = if ($old.Contains("spring.datasource.username")) { $old["spring.datasource.username"] } else { "root" }
-$DbPass = if ($old.Contains("spring.datasource.password")) { $old["spring.datasource.password"] } else { "" }
-$DbName = "web_fixture_management"
-if ($old.Contains("spring.datasource.url") -and $old["spring.datasource.url"] -match 'jdbc:mysql://[^/]+/([^?;]+)') { $DbName = $Matches[1] }
+. (Join-Path $PSScriptRoot "jig-db.ps1")
 
-if ($MySqlBin -eq "") { $MySqlBin = Find-MySqlBin }
-if (-not $MySqlBin) { Write-Host "[ERROR] MySQL (XAMPP) not found."; exit 1 }
-$Exe = if (Test-Path (Join-Path $MySqlBin "mysql.exe")) { ".exe" } else { "" }
-$MySql = Join-Path $MySqlBin "mysql$Exe"
-$MySqlDump = Join-Path $MySqlBin "mysqldump$Exe"
-$AuthArgs = @("-u", $DbUser)
-if ($DbPass -ne "") { $AuthArgs += "--password=$DbPass" }
-
-function Invoke-MySql([string[]]$extra, [string]$inputFile = $null) {
-    $argList = @($AuthArgs + @("--default-character-set=utf8mb4") + $extra) | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
-    $out = [IO.Path]::GetTempFileName(); $err = [IO.Path]::GetTempFileName()
-    $p = @{ FilePath = $MySql; ArgumentList = $argList; NoNewWindow = $true; Wait = $true; PassThru = $true
-            RedirectStandardOutput = $out; RedirectStandardError = $err }
-    if ($inputFile) { $p.RedirectStandardInput = $inputFile }
-    $proc = Start-Process @p
-    $result = @{ Code = $proc.ExitCode; Out = (Get-Content $out -Raw); Err = (Get-Content $err -Raw) }
-    Remove-Item $out, $err -Force -ErrorAction SilentlyContinue
-    return $result
-}
+$old = Read-JigProps $PropsPath
+$new = Read-JigProps $NewPropsPath
+$cfg = Get-JigDbConfig $PackageDir $MySqlBin
+if (-not $cfg.Bin) { Write-Host "[ERROR] MySQL (XAMPP) not found."; exit 1 }
+$DbName = $cfg.Name
+function Invoke-MySql([string[]]$extra, [string]$inputFile = $null) { Invoke-JigMySql $cfg $extra $inputFile }
+$script:AccountCreated = $false
 
 # -- 1. Database backup (nothing has changed yet, so failing here is safe) --
 Write-Host "    Backing up database $DbName..."
 $r = Invoke-MySql @("-N", "-B", "-e", "SELECT 1")
 if ($r.Code -ne 0) { Write-Host "[ERROR] MySQL is not responding. Start MySQL and run the update again."; Write-Host $r.Err; exit 1 }
 $DumpFile = Join-Path $BackupDir "database-$DbName.sql"
-$dumpArgs = @($AuthArgs + @("--default-character-set=utf8mb4", "--single-transaction", "--result-file=$DumpFile", $DbName)) | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
-$d = Start-Process -FilePath $MySqlDump -ArgumentList $dumpArgs -NoNewWindow -Wait -PassThru
-if ($d.ExitCode -ne 0 -or -not (Test-Path $DumpFile)) { Write-Host "[ERROR] Database backup failed. Nothing was changed."; exit 1 }
+$d = Invoke-JigMySqlDump $cfg @("--result-file=$DumpFile", $DbName)
+if ($d.Code -ne 0 -or -not (Test-Path $DumpFile)) { Write-Host "[ERROR] Database backup failed. Nothing was changed."; Write-Host $d.Err; exit 1 }
 Write-Host "    Database backup: $DumpFile"
 
 try {
@@ -136,6 +101,13 @@ try {
     }
     [IO.File]::WriteAllText($PropsPath, ($lines -join "`r`n") + "`r`n", $Utf8)
 
+    # -- 3b. Dedicated database account (v2.0) ----------------------------
+    Write-Host "    Checking the database account..."
+    $acct = Install-JigAppAccount $cfg
+    Write-Host "    $($acct.Message)"
+    if (-not $acct.Ok) { throw "Could not set up the database account." }
+    $script:AccountCreated = $acct.Created
+
     # -- 4. Database migrations ------------------------------------------
     $DbDir = Join-Path $PackageDir "database"
     $r = Invoke-MySql @("-N", "-B", "-e", "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DbName' AND table_name='schema_migrations'")
@@ -175,6 +147,7 @@ try {
                 $restored = $false
             }
         }
+        if ($script:AccountCreated) { Remove-JigAppAccount $cfg; Write-Host "    Removed the database account created by this update." }
         $back = Invoke-MySql @($DbName) $DumpFile
         if ($back.Code -ne 0) { throw "Database restore failed: $($back.Err)" }
     } catch {

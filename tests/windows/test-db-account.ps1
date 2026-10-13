@@ -123,6 +123,37 @@ function Test-FreshInstallCreatesAppAccount {
     Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.schema_migrations") $migrations "migrations recorded"
 }
 
+function New-Update([string]$name) {
+    $script:Pkg = Join-Path $Work "$name/installed"; $script:Src = Join-Path $Work "$name/new"; $script:Bk = Join-Path $Work "$name/backup"
+    New-Install $script:Pkg "root" "" "1.4.3"; New-Install $script:Src "root" "" "2.0.0"
+    New-Item -ItemType Directory -Force -Path $script:Bk | Out-Null
+    Copy-Item (Join-Path $script:Pkg "app") (Join-Path $script:Bk "app") -Recurse
+    Copy-Item (Join-Path $script:Pkg "scripts") (Join-Path $script:Bk "scripts") -Recurse
+}
+function Test-UpdateSwitchesToAppAccount {
+    Reset-Db; Install-V143Db; New-Update "upd"
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 0 "exit code"
+    $props = Join-Path $Pkg "app/application.properties"
+    Check (PropOf $props "spring.datasource.username") "jig_app" "switched"
+    Check (PropOf $props "app.version") "2.0.0" "version"
+    Check (Test-Path (Join-Path $Bk "database-web_fixture_management.sql")) $true "dump made"
+}
+function Test-UpdateRollback {
+    Reset-Db; Install-V143Db; New-Update "rb"
+    Set-Content (Join-Path $Src "database/migration-2099-01-01-broken.sql") "THIS IS NOT SQL;"
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 3 "rolled back"
+    Check (PropOf (Join-Path $Pkg "app/application.properties") "spring.datasource.username") "root" "settings back to root"
+    Check (RootSql "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app'") "0" "jig_app removed"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.users") "4" "data intact"
+}
+function Test-RestoreUsesSettingsAccount {
+    $text = Get-Content (Join-Path $WinScripts "restore-backup.ps1") -Raw
+    Check ($text -match 'Get-JigDbConfig') $true "uses jig-db.ps1"
+    Check ($text -match 'MYSQL_PWD') $false "no MYSQL_PWD"
+}
+
 Run-Test Test-ConfigParsesProps
 Run-Test Test-PingRootNoPassword
 Run-Test Test-SpecialCharPassword
@@ -133,6 +164,10 @@ Run-Test Test-NewPasswordNotOnCommandLine
 Run-Test Test-CheckScriptExitCodes
 
 Run-Test Test-FreshInstallCreatesAppAccount
+
+Run-Test Test-UpdateSwitchesToAppAccount
+Run-Test Test-UpdateRollback
+Run-Test Test-RestoreUsesSettingsAccount
 
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host ""; Write-Host "$script:Run tests, $script:Failed failed"
