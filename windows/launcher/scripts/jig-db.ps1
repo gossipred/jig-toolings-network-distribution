@@ -53,8 +53,9 @@ function Get-JigDbConfig([string]$PackageDir, [string]$MySqlBin = "") {
     return $cfg
 }
 
-# Settings file now holds the DB password: current user, Administrators and
-# SYSTEM only (chmod 600 when the tests run on macOS).
+# A file only the current user, Administrators and SYSTEM can open (temp files
+# holding a password). The settings file is NOT protected on purpose: the system
+# often runs under a different account than the one that installed it.
 function Protect-JigFile([string]$path) {
     if ($env:OS -eq "Windows_NT") {
         $acl = New-Object Security.AccessControl.FileSecurity
@@ -148,7 +149,6 @@ function Install-JigAppAccount($cfg) {
         # Prove the new account can read the real data before switching to it.
         if ($ok) { $r = Invoke-JigDbTool $cfg "mysql" @("-N", "-B", "-e", "SELECT COUNT(*) FROM users", $cfg.Name) $null $u $pw; $ok = $r.Code -eq 0 }
         if ($ok) {
-            Protect-JigFile $cfg.PropsPath
             Set-JigProp $cfg.PropsPath "spring.datasource.username" $u
             Set-JigProp $cfg.PropsPath "spring.datasource.password" $pw
         }

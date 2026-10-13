@@ -86,8 +86,6 @@ function Test-InstallAppAccount {
     Check $cfg.User "root" "cfg unchanged"
     Check (Test-JigDb (Get-JigDbConfig $d $Bin)) $true "jig_app connects"
     Check (RootSql "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app'") "3" "jig_app@localhost, @127.0.0.1 and @::1"
-    if ($env:OS -ne "Windows_NT") { Check (Get-Item $props).UnixMode "-rw-------" "settings readable by owner only" }
-    else { Check ((Get-Acl $props).AreAccessRulesProtected) $true "settings ACL not inherited" }
 }
 function Test-NewPasswordNotOnCommandLine {
     if ($env:OS -eq "Windows_NT") { return }   # the stub below is a bash script
