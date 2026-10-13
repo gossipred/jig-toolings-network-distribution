@@ -146,6 +146,43 @@ function Test-UpdateRollback {
     Check (RootSql "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app'") "0" "jig_app removed"
     Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.users") "4" "data intact"
 }
+function Test-SecondUpdateSuccessMigration {
+    Reset-Db; Install-V143Db; New-Update "secondSuccess"
+    $cfg = Get-JigDbConfig $Pkg $Bin
+    $r = Install-JigAppAccount $cfg
+    Check $r.Ok $true "existing app account installed"
+    $props = Join-Path $Pkg "app/application.properties"
+    Copy-Item $props (Join-Path $Bk "app/application.properties") -Force
+    $before = PropOf $props "spring.datasource.password"
+    Set-Content (Join-Path $Src "database/migration-2099-02-01-success.sql") "CREATE TABLE web_fixture_management.v21_probe (id INT);"
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 0 "second update exit code"
+    Check (PropOf $props "spring.datasource.username") "jig_app" "account kept"
+    Check (PropOf $props "spring.datasource.password") $before "password kept"
+    Check (Test-JigDb (Get-JigDbConfig $Pkg $Bin)) $true "app account still connects"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.users") "4" "data intact"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.schema_migrations WHERE filename='migration-2099-02-01-success.sql'") "1" "migration record"
+    Check (RootSql "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='web_fixture_management' AND table_name='v21_probe'") "1" "new table exists"
+}
+
+function Test-SecondUpdateBrokenMigration {
+    Reset-Db; Install-V143Db; New-Update "secondBroken"
+    $cfg = Get-JigDbConfig $Pkg $Bin
+    $r = Install-JigAppAccount $cfg
+    Check $r.Ok $true "existing app account installed"
+    $props = Join-Path $Pkg "app/application.properties"
+    Copy-Item $props (Join-Path $Bk "app/application.properties") -Force
+    $before = PropOf $props "spring.datasource.password"
+    Set-Content (Join-Path $Src "database/migration-2099-02-01-broken.sql") "THIS IS NOT SQL;"
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 3 "second update exit code"
+    Check (PropOf $props "spring.datasource.username") "jig_app" "account kept"
+    Check (PropOf $props "spring.datasource.password") $before "password kept"
+    Check (Test-JigDb (Get-JigDbConfig $Pkg $Bin)) $true "app account still connects"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.users") "4" "data intact"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.schema_migrations WHERE filename='migration-2099-02-01-broken.sql'") "0" "migration record"
+}
+
 function Test-RestoreUsesSettingsAccount {
     $text = Get-Content (Join-Path $WinScripts "restore-backup.ps1") -Raw
     Check ($text -match 'Get-JigDbConfig') $true "uses jig-db.ps1"
@@ -175,6 +212,9 @@ Run-Test Test-UpdateRollback
 Run-Test Test-RestoreUsesSettingsAccount
 
 Run-Test Test-NoWindowsScriptUsesRoot
+
+Run-Test Test-SecondUpdateSuccessMigration
+Run-Test Test-SecondUpdateBrokenMigration
 
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host ""; Write-Host "$script:Run tests, $script:Failed failed"

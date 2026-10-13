@@ -21,12 +21,26 @@ PACKAGE_DIR="$CORE_REPO/customer-package/windows-network-app"
 MYSQL_PACKAGE_DIR="$CORE_REPO/customer-package/mysql-windows"
 LAUNCHER_DIR="$DIST_REPO/windows/launcher"
 
+# Refuse to ship customer credentials in the package template.
+check_release_template() {
+    if ! awk '
+        { sub(/\r$/, "") }
+        /^spring\.datasource\.username=/ { users++; if ($0 != "spring.datasource.username=root") bad=1 }
+        /^spring\.datasource\.password=/ { passwords++; if ($0 != "spring.datasource.password=") bad=1 }
+        END { exit (bad || users != 1 || passwords != 1) }
+    ' "$1"; then
+        echo "[ERROR] Release template must use root with an empty database password: $1" >&2
+        return 1
+    fi
+}
+
 # ── Read version ─────────────────────────────────────────────────────────────
 PROPS="$PACKAGE_DIR/app/application.properties"
 if [ ! -f "$PROPS" ]; then
     echo "[ERROR] application.properties not found: $PROPS"
     exit 1
 fi
+check_release_template "$PROPS"
 VERSION=$(grep -E '^app\.version=' "$PROPS" | cut -d= -f2 | tr -d '[:space:]')
 if [ -z "$VERSION" ]; then
     echo "[ERROR] app.version not found in $PROPS"

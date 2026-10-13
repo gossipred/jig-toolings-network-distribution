@@ -24,6 +24,19 @@ CORE_REPO="${1:-/Users/gossipredm4/Documents/Codex/jig-and-toolings-management-s
 PACKAGE_DIR="$CORE_REPO/customer-package/mac-network-app"
 LAUNCHER_DIR="$DIST_REPO/macos/launcher"
 
+# Refuse to ship customer credentials in the package template.
+check_release_template() {
+    if ! awk '
+        { sub(/\r$/, "") }
+        /^spring\.datasource\.username=/ { users++; if ($0 != "spring.datasource.username=root") bad=1 }
+        /^spring\.datasource\.password=/ { passwords++; if ($0 != "spring.datasource.password=") bad=1 }
+        END { exit (bad || users != 1 || passwords != 1) }
+    ' "$1"; then
+        echo "[ERROR] Release template must use root with an empty database password: $1" >&2
+        return 1
+    fi
+}
+
 # ── Read version ─────────────────────────────────────────────────────────────
 PROPS="$PACKAGE_DIR/app/application.properties"
 if [ ! -f "$PROPS" ]; then
@@ -31,6 +44,7 @@ if [ ! -f "$PROPS" ]; then
     echo "        Run scripts/build-mac-network-app-package.sh in the core repo first."
     exit 1
 fi
+check_release_template "$PROPS"
 VERSION=$(grep -E '^app\.version=' "$PROPS" | cut -d= -f2 | tr -d '[:space:]')
 if [ -z "$VERSION" ]; then
     echo "[ERROR] app.version not found in $PROPS"

@@ -257,6 +257,41 @@ test_update_keeps_existing_app_account() {
     check "$(prop_of "$PKG/app/application.properties" spring.datasource.password)" "$before" "password unchanged on a second update"
 }
 
+test_second_update_success_migration() {
+    reset_db || return 1; install_v143_db || return 1; make_update second_success
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$PKG" > /dev/null || return 1
+    cp "$PKG/app/application.properties" "$BK/app/application.properties" || return 1
+    local before; before="$(prop_of "$PKG/app/application.properties" spring.datasource.password)"
+    echo "CREATE TABLE web_fixture_management.v21_probe (id INT);" > "$SRC/database/migration-2099-02-01-success.sql"
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/second_success.out" 2>&1
+    local code=$?
+    check "$code" "0" "second update exit code" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.username)" "jig_app" "account kept" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.password)" "$before" "password kept" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "data intact" &&
+    jig_db_load "$PKG" && jig_db_ping &&
+    check "$(root_sql -e "SELECT COUNT(*) FROM web_fixture_management.schema_migrations WHERE filename='migration-2099-02-01-success.sql'")" "1" "migration record" &&
+    check "$(root_sql -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='web_fixture_management' AND table_name='v21_probe'")" "1" "new table exists"
+}
+
+test_second_update_broken_migration() {
+    reset_db || return 1; install_v143_db || return 1; make_update second_broken
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$PKG" > /dev/null || return 1
+    cp "$PKG/app/application.properties" "$BK/app/application.properties" || return 1
+    local before; before="$(prop_of "$PKG/app/application.properties" spring.datasource.password)"
+    echo "THIS IS NOT SQL;" > "$SRC/database/migration-2099-02-01-broken.sql"
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/second_broken.out" 2>&1
+    local code=$?
+    check "$code" "3" "second update exit code" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.username)" "jig_app" "account kept" &&
+    check "$(prop_of "$PKG/app/application.properties" spring.datasource.password)" "$before" "password kept" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "data intact" &&
+    jig_db_load "$PKG" && jig_db_ping &&
+    check "$(root_sql -e "SELECT COUNT(*) FROM web_fixture_management.schema_migrations WHERE filename='migration-2099-02-01-broken.sql'")" "0" "migration record"
+}
+
 test_no_script_uses_root_except_full_uninstall() {
     local hits
     hits="$(grep -ln -- '-u root' "$MAC_SCRIPTS"/* | grep -v 'uninstall-and-delete-data.command')"
@@ -313,4 +348,6 @@ run_test test_update_keeps_existing_app_account
 run_test test_no_script_uses_root_except_full_uninstall
 run_test test_ping_when_root_has_password
 run_test test_restore_backup_uses_settings_account
+run_test test_second_update_success_migration
+run_test test_second_update_broken_migration
 finish
