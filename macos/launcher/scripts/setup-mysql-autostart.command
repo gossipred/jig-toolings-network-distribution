@@ -6,6 +6,9 @@
 # DRY_RUN=1 prints every privileged action instead of running it.
 set -u
 cd "$(dirname "$0")"
+SCRIPT_DIR="$(pwd)"
+PACKAGE_DIR="$(cd .. && pwd)"
+. "$SCRIPT_DIR/jig-db.sh"
 
 XAMPP="/Applications/XAMPP/xamppfiles/xampp"
 LABEL="studio.aurastudio.jig-mysql"
@@ -100,7 +103,7 @@ if [ "$DRY_RUN" = "1" ] || [ -z "$MYSQL_EXE" ]; then
     echo "  (skipped)"
 else
     for i in $(seq 1 30); do
-        if "$MYSQL_EXE" -u root -e "SELECT 1" >/dev/null 2>&1; then
+        if jig_db_load "$PACKAGE_DIR" && jig_db_ping; then
             echo
             echo "[OK] MySQL is running and will start automatically at every boot."
             echo "[完成] MySQL 已啟動，以後開機會自動啟動，不需要再開 XAMPP Control Panel。"

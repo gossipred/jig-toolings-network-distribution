@@ -9,6 +9,7 @@ LOG_DIR="$PACKAGE_DIR/logs"
 RUNTIME_DIR="$PACKAGE_DIR/runtime"
 JAR_FILE="$APP_DIR/jig-management-system.jar"
 . "$SCRIPT_DIR/jig-port.sh"
+. "$SCRIPT_DIR/jig-db.sh"
 JIG_PORT="$(jig_read_port "$PACKAGE_DIR")"
 LOCAL_URL="http://localhost:$JIG_PORT"
 LOGIN_URL="http://localhost:$JIG_PORT/login"
@@ -82,19 +83,9 @@ else
     fi
 fi
 
-# Find MySQL client: prefer XAMPP for macOS, fall back to system PATH (Homebrew etc).
-MYSQL_EXE=""
-for candidate in /Applications/XAMPP/bin/mysql /Applications/XAMPP/xamppfiles/bin/mysql; do
-    if [ -x "$candidate" ]; then
-        MYSQL_EXE="$candidate"
-        break
-    fi
-done
-if [ -z "$MYSQL_EXE" ] && command -v mysql >/dev/null 2>&1; then
-    MYSQL_EXE="mysql"
-fi
-
-if [ -z "$MYSQL_EXE" ]; then
+# Check the database with the account in app/application.properties (jig_app
+# since v2.0), so a root password set by the customer does not matter.
+if ! jig_db_load "$PACKAGE_DIR"; then
     echo
     echo "[ERROR] MySQL client not found."
     echo "Please install XAMPP for macOS first, then start MySQL in the XAMPP control panel."
@@ -102,7 +93,7 @@ if [ -z "$MYSQL_EXE" ]; then
     exit 1
 fi
 
-if ! "$MYSQL_EXE" -u root -e "SELECT 1" >/dev/null 2>&1; then
+if ! jig_db_ping; then
     echo
     echo "[ERROR] MySQL is not responding."
     echo "Please open the XAMPP control panel and start MySQL."

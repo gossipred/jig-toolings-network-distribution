@@ -16,6 +16,7 @@ echo "- $PACKAGE_DIR/logs"
 echo
 echo "It will also try to drop MySQL database:"
 echo "- $DB_NAME"
+echo "- MySQL account jig_app"
 echo
 read -r -p "Type DELETE to continue: " CONFIRM
 if [ "$CONFIRM" != "DELETE" ]; then
@@ -38,7 +39,7 @@ for candidate in /Applications/XAMPP/bin/mysql /Applications/XAMPP/xamppfiles/bi
 done
 [ -z "$MYSQL_EXE" ] && command -v mysql >/dev/null 2>&1 && MYSQL_EXE="mysql"
 
-if [ -n "$MYSQL_EXE" ] && "$MYSQL_EXE" -u root -p -e "DROP DATABASE IF EXISTS $DB_NAME;"; then
+if [ -n "$MYSQL_EXE" ] && "$MYSQL_EXE" -u root -p -e "DROP DATABASE IF EXISTS $DB_NAME; DROP USER IF EXISTS 'jig_app'@'localhost'; DROP USER IF EXISTS 'jig_app'@'127.0.0.1'; DROP USER IF EXISTS 'jig_app'@'::1';"; then
     echo "Database dropped."
 else
     echo "Database drop failed. Please check MySQL manually."

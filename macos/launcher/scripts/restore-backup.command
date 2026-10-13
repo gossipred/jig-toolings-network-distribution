@@ -10,17 +10,11 @@ cd "$(dirname "$0")"
 SCRIPT_DIR="$(pwd)"
 PACKAGE_DIR="$(cd .. && pwd)"
 AUTO_DIR="$PACKAGE_DIR/backups/auto"
-PROPS="$PACKAGE_DIR/app/application.properties"
 . "$SCRIPT_DIR/jig-port.sh"
+. "$SCRIPT_DIR/jig-db.sh"
 JIG_PORT="$(jig_read_port "$PACKAGE_DIR")"
 
 pause_exit() { echo; read -r -p "Press Enter to close..."; return "$1"; }
-prop() {
-    awk -v k="$1" '/^[ \t]*[#!]/ { next }
-        { key = $0; sub(/=.*/, "", key); gsub(/^[ \t]+|[ \t]+$/, "", key)
-          if (key == k && index($0, "=") > 0) { v = substr($0, index($0, "=") + 1); gsub(/^[ \t]+|[ \t]+$/, "", v); val = v } }
-        END { print val }' "$PROPS"
-}
 
 echo "============================================================"
 echo " Jig & Toolings Management System - Restore Backup"
@@ -68,20 +62,11 @@ if [ "$OK" != "YES" ]; then
     pause_exit 0; return
 fi
 
-DB_USER="$(prop spring.datasource.username)"; [ -z "$DB_USER" ] && DB_USER=root
-DB_PASS="$(prop spring.datasource.password)"
-DB_NAME="$(prop spring.datasource.url | sed -n 's|^jdbc:mysql://[^/]*/\([^?;]*\).*|\1|p')"
-[ -z "$DB_NAME" ] && DB_NAME=web_fixture_management
-MYSQL_BIN="${JIG_MYSQL_BIN:-}"
-if [ -z "$MYSQL_BIN" ]; then
-    for d in /Applications/XAMPP/bin /Applications/XAMPP/xamppfiles/bin; do [ -x "$d/mysql" ] && MYSQL_BIN="$d" && break; done
-fi
-if [ -z "$MYSQL_BIN" ]; then
+if ! jig_db_load "$PACKAGE_DIR"; then
     echo "[ERROR] MySQL (XAMPP) not found."
     pause_exit 1; return
 fi
-[ -n "$DB_PASS" ] && export MYSQL_PWD="$DB_PASS"
-if ! "$MYSQL_BIN/mysql" -u "$DB_USER" -e "SELECT 1" >/dev/null 2>&1; then
+if ! jig_db_ping; then
     echo "[ERROR] MySQL is not responding. Run scripts/setup-mysql-autostart.command, then try again."
     pause_exit 1; return
 fi
@@ -109,14 +94,13 @@ if ! unzip -p "$ZIP" "$ENTRY" > "$WORK/restore.sql" || [ ! -s "$WORK/restore.sql
 fi
 mkdir -p "$PACKAGE_DIR/backups"
 SAFETY="$PACKAGE_DIR/backups/before-restore-$(date +%Y-%m-%d_%H%M%S).sql"
-if ! "$MYSQL_BIN/mysqldump" -u "$DB_USER" --default-character-set=utf8mb4 --single-transaction \
-        --result-file="$SAFETY" "$DB_NAME" || [ ! -s "$SAFETY" ]; then
+if ! jig_mysqldump --result-file="$SAFETY" "$JIG_DB_NAME" || [ ! -s "$SAFETY" ]; then
     rm -rf "$WORK"
     echo "[ERROR] Could not save the current database first, so nothing was restored."
     pause_exit 1; return
 fi
 echo "    Current database saved: $SAFETY"
-if ! ERR="$("$MYSQL_BIN/mysql" -u "$DB_USER" --default-character-set=utf8mb4 "$DB_NAME" < "$WORK/restore.sql" 2>&1)"; then
+if ! ERR="$(jig_mysql "$JIG_DB_NAME" < "$WORK/restore.sql" 2>&1)"; then
     rm -rf "$WORK"
     echo "[ERROR] Restore failed: $ERR"
     echo "        Previous data: $SAFETY"

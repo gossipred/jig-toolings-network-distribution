@@ -257,6 +257,35 @@ test_update_keeps_existing_app_account() {
     check "$(prop_of "$PKG/app/application.properties" spring.datasource.password)" "$before" "password unchanged on a second update"
 }
 
+test_no_script_uses_root_except_full_uninstall() {
+    local hits
+    hits="$(grep -ln -- '-u root' "$MAC_SCRIPTS"/* | grep -v 'uninstall-and-delete-data.command')"
+    check "$hits" "" "only the full uninstall (which drops the database) may use root"
+}
+
+test_ping_when_root_has_password() {
+    reset_db || return 1; install_v143_db || return 1
+    local d="$WORK_ROOT/rootpw"; make_install "$d" root ""
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$d" > /dev/null || return 1
+    root_sql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'RootPass123', 'root'@'127.0.0.1' IDENTIFIED BY 'RootPass123'" || return 1
+    TEST_ROOT_PASS=RootPass123
+    local rc=0
+    # Prove root really needs the password now, then that jig_app does not.
+    if MYSQL_PWD="" "$TEST_BIN/mysql" --no-defaults -h 127.0.0.1 -P "$TEST_PORT" -u root -e "SELECT 1" >/dev/null 2>&1; then
+        echo "    root still connects without a password"; rc=1
+    fi
+    jig_db_load "$d" && jig_db_ping || rc=1
+    root_sql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '', 'root'@'127.0.0.1' IDENTIFIED BY ''" || { echo "    could not reset the root password"; rc=1; }
+    return $rc
+}
+
+test_restore_backup_uses_settings_account() {
+    grep -q 'jig_db_load' "$MAC_SCRIPTS/restore-backup.command" &&
+    grep -q 'jig_mysqldump' "$MAC_SCRIPTS/restore-backup.command" &&
+    ! grep -q 'MYSQL_PWD=' "$MAC_SCRIPTS/restore-backup.command"
+}
+
 run_test test_sandbox_is_not_production
 run_test test_db_load_parses_props
 run_test test_db_load_defaults_for_old_props
@@ -281,4 +310,7 @@ run_test test_install_database_creates_app_account
 run_test test_update_switches_to_app_account
 run_test test_update_rollback_removes_new_account
 run_test test_update_keeps_existing_app_account
+run_test test_no_script_uses_root_except_full_uninstall
+run_test test_ping_when_root_has_password
+run_test test_restore_backup_uses_settings_account
 finish
