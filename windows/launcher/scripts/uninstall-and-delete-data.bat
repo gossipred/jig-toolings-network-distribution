@@ -15,6 +15,7 @@ echo - %PACKAGE_DIR%\logs
 echo.
 echo It will also try to drop MySQL database:
 echo - %DB_NAME%
+echo - MySQL account jig_app
 echo.
 echo Type DELETE to continue.
 set /p CONFIRM="Confirm: "
@@ -32,7 +33,10 @@ if exist "%PACKAGE_DIR%\backups" rmdir /s /q "%PACKAGE_DIR%\backups"
 if exist "%PACKAGE_DIR%\logs" rmdir /s /q "%PACKAGE_DIR%\logs"
 
 echo Dropping database %DB_NAME%...
-mysql -u root -p -e "DROP DATABASE IF EXISTS %DB_NAME%;"
+set "MYSQL_EXE=mysql"
+if exist "C:\xampp\mysql\bin\mysql.exe"   set "MYSQL_EXE=C:\xampp\mysql\bin\mysql.exe"
+if exist "C:\xampp\mariadb\bin\mysql.exe" set "MYSQL_EXE=C:\xampp\mariadb\bin\mysql.exe"
+"%MYSQL_EXE%" -u root -p -e "DROP DATABASE IF EXISTS %DB_NAME%; DROP USER IF EXISTS 'jig_app'@'localhost'; DROP USER IF EXISTS 'jig_app'@'127.0.0.1'; DROP USER IF EXISTS 'jig_app'@'::1';"
 if errorlevel 1 (
   echo Database drop failed. Please check MySQL manually.
 ) else (

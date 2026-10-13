@@ -154,6 +154,13 @@ function Test-RestoreUsesSettingsAccount {
     Check ($text -match 'MYSQL_PWD') $false "no MYSQL_PWD"
 }
 
+function Test-NoWindowsScriptUsesRoot {
+    $files = @(Get-ChildItem (Join-Path $Dist "windows/launcher/scripts") -File) + @(Get-Item (Join-Path $Dist "windows/installer/jig-setup.nsi"))
+    $hits = $files | Where-Object { $_.Name -ne "uninstall-and-delete-data.bat" } |
+        Where-Object { (Get-Content $_.FullName -Raw) -match '-u root' } | ForEach-Object Name
+    Check (@($hits) -join ",") "" "only the full uninstall may use root"
+}
+
 Run-Test Test-ConfigParsesProps
 Run-Test Test-PingRootNoPassword
 Run-Test Test-SpecialCharPassword
@@ -168,6 +175,8 @@ Run-Test Test-FreshInstallCreatesAppAccount
 Run-Test Test-UpdateSwitchesToAppAccount
 Run-Test Test-UpdateRollback
 Run-Test Test-RestoreUsesSettingsAccount
+
+Run-Test Test-NoWindowsScriptUsesRoot
 
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host ""; Write-Host "$script:Run tests, $script:Failed failed"

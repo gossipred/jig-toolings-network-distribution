@@ -144,7 +144,7 @@ Section "主程式" SecMain
   ; Step 2: 確保 MySQL 在跑。已在跑（例如客戶從 XAMPP Control Panel 按過 Start）就不動它；
   ; 沒在跑才註冊成 Windows 服務（開機自動啟動，伺服器不用每次手動按 Start）再啟動。
   DetailPrint "檢查 MySQL..."
-  nsExec::Exec '"$MYSQLBIN\mysql.exe" -u root -e "SELECT 1"'
+  nsExec::Exec 'powershell -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\scripts\jig-db-check.ps1" -PackageDir "$INSTDIR" -MySqlBin "$MYSQLBIN"'
   Pop $0
   ${If} $0 != 0
     nsExec::Exec 'sc query mysql'
@@ -162,7 +162,7 @@ Section "主程式" SecMain
     Pop $1
     ${For} $2 1 15
       Sleep 2000
-      nsExec::Exec '"$MYSQLBIN\mysql.exe" -u root -e "SELECT 1"'
+      nsExec::Exec 'powershell -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\scripts\jig-db-check.ps1" -PackageDir "$INSTDIR" -MySqlBin "$MYSQLBIN"'
       Pop $0
       ${If} $0 == 0
         ${ExitFor}

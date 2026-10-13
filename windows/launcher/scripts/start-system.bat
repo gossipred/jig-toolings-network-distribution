@@ -55,26 +55,18 @@ if exist "%RUNTIME_DIR%\bin\java.exe" (
     )
 )
 
-:: Find MySQL client so we can verify the database service before startup.
-set "MYSQL_EXE="
-if exist "C:\xampp\mysql\bin\mysql.exe"   set "MYSQL_EXE=C:\xampp\mysql\bin\mysql.exe"
-if exist "C:\xampp\mariadb\bin\mysql.exe" set "MYSQL_EXE=C:\xampp\mariadb\bin\mysql.exe"
-
-if "%MYSQL_EXE%"=="" (
-    where mysql >nul 2>&1
-    if not errorlevel 1 set "MYSQL_EXE=mysql"
-)
-
-if "%MYSQL_EXE%"=="" (
+:: Check the database with the account in app\application.properties (jig_app
+:: since v2.0), so a root password set by the customer does not matter.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%jig-db-check.ps1" -PackageDir "%PACKAGE_DIR%"
+set "DB_CHECK=%errorlevel%"
+if "%DB_CHECK%"=="2" (
     echo.
     echo [ERROR] MySQL client not found.
     echo Please install XAMPP first, then start MySQL in XAMPP Control Panel.
     pause
     exit /b 1
 )
-
-"%MYSQL_EXE%" -u root -e "SELECT 1" >nul 2>&1
-if errorlevel 1 (
+if not "%DB_CHECK%"=="0" (
     echo.
     echo [ERROR] MySQL is not responding.
     echo Please open XAMPP Control Panel and click Start on MySQL.
