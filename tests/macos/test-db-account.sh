@@ -136,6 +136,61 @@ test_mysql_bin_override_must_exist() {
     if JIG_MYSQL_BIN="$WORK_ROOT/does-not-exist" jig_db_load "$d"; then echo "    expected failure"; return 1; fi
 }
 
+app_user_count() { root_sql -e "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app'"; }
+
+test_ensure_account_switches_root_install() {
+    reset_db; install_v143_db
+    local d="$WORK_ROOT/acct"; make_install "$d" root ""
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$d" || return 1
+    local pw; pw="$(prop_of "$d/app/application.properties" spring.datasource.password)"
+    check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "jig_app" "username switched" &&
+    check "${#pw}" "24" "24-char password" &&
+    check "$(printf '%s' "$pw" | tr -d 'A-Za-z0-9')" "" "password is alphanumeric" &&
+    check "$JIG_DB_ACCOUNT_CREATED" "1" "created flag" &&
+    check "$JIG_DB_USER" "root" "loaded connection still root" &&
+    check "$(app_user_count)" "3" "jig_app@localhost, @127.0.0.1 and @::1" &&
+    check "$(MYSQL_PWD="$pw" "$TEST_BIN/mysql" --no-defaults -h 127.0.0.1 -P "$TEST_PORT" -u jig_app -N -B -e 'SELECT COUNT(*) FROM users' web_fixture_management)" "4" "jig_app reads the data" &&
+    check "$(stat -f %Lp "$d/app/application.properties")" "600" "settings file readable by owner only"
+}
+
+test_ensure_account_has_no_global_privileges() {
+    reset_db; install_v143_db
+    local d="$WORK_ROOT/priv"; make_install "$d" root ""
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$d" || return 1
+    check "$(root_sql -e "SELECT COUNT(*) FROM mysql.user WHERE User='jig_app' AND (Super_priv='Y' OR Create_user_priv='Y' OR File_priv='Y')")" "0" "no global privileges"
+}
+
+test_ensure_account_keeps_custom_user() {
+    reset_db; install_v143_db
+    local d="$WORK_ROOT/custom"; make_install "$d" custom_user "secret"
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$d" || return 1
+    check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "custom_user" "custom user kept" &&
+    check "$(app_user_count)" "0" "no jig_app created"
+}
+
+test_ensure_account_when_user_already_exists() {
+    reset_db; install_v143_db
+    root_sql -e "CREATE USER 'jig_app'@'localhost' IDENTIFIED BY 'old'; CREATE USER 'jig_app'@'127.0.0.1' IDENTIFIED BY 'old'; CREATE USER 'jig_app'@'::1' IDENTIFIED BY 'old';"
+    local d="$WORK_ROOT/rerun"; make_install "$d" root ""
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    jig_db_ensure_app_account "$d" || return 1
+    local pw; pw="$(prop_of "$d/app/application.properties" spring.datasource.password)"
+    check "$JIG_DB_ACCOUNT_CREATED" "0" "not marked as created" &&
+    check "$(MYSQL_PWD="$pw" "$TEST_BIN/mysql" --no-defaults -h 127.0.0.1 -P "$TEST_PORT" -u jig_app -N -B -e 'SELECT 1')" "1" "password was reset"
+}
+
+test_ensure_account_failure_leaves_settings() {
+    reset_db   # no database: the account check (SELECT FROM users) must fail
+    local d="$WORK_ROOT/fail"; make_install "$d" root ""
+    . "$MAC_SCRIPTS/jig-db.sh"; . "$MAC_SCRIPTS/jig-db-account.sh"
+    if jig_db_ensure_app_account "$d"; then echo "    expected failure"; return 1; fi
+    check "$(prop_of "$d/app/application.properties" spring.datasource.username)" "root" "settings unchanged" &&
+    check "$(app_user_count)" "0" "new account removed again"
+}
+
 run_test test_sandbox_is_not_production
 run_test test_db_load_parses_props
 run_test test_db_load_defaults_for_old_props
@@ -150,4 +205,9 @@ run_test test_props_crlf
 run_test test_jdbc_url_variants
 run_test test_unparseable_url_fails
 run_test test_mysql_bin_override_must_exist
+run_test test_ensure_account_switches_root_install
+run_test test_ensure_account_has_no_global_privileges
+run_test test_ensure_account_keeps_custom_user
+run_test test_ensure_account_when_user_already_exists
+run_test test_ensure_account_failure_leaves_settings
 finish
