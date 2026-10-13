@@ -113,6 +113,16 @@ function Test-CheckScriptExitCodes {
     & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $WinScripts "jig-db-check.ps1") -PackageDir $d -MySqlBin (Join-Path $Work "nope"); Check $LASTEXITCODE 2 "no mysql"
 }
 
+function Test-FreshInstallCreatesAppAccount {
+    Reset-Db; $d = Join-Path $Work "fresh"; New-Install $d "root" ""
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $d "scripts/jig-db-install.ps1") -PackageDir $d -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 0 "exit code"
+    Check (PropOf (Join-Path $d "app/application.properties") "spring.datasource.username") "jig_app" "username"
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.users") "4" "seed users"
+    $migrations = @(Get-ChildItem (Join-Path $d "database") -Filter "migration-*.sql").Count
+    Check (RootSql "SELECT COUNT(*) FROM web_fixture_management.schema_migrations") $migrations "migrations recorded"
+}
+
 Run-Test Test-ConfigParsesProps
 Run-Test Test-PingRootNoPassword
 Run-Test Test-SpecialCharPassword
@@ -121,6 +131,8 @@ Run-Test Test-InstallAppAccount
 Run-Test Test-InstallKeepsCustomUser
 Run-Test Test-NewPasswordNotOnCommandLine
 Run-Test Test-CheckScriptExitCodes
+
+Run-Test Test-FreshInstallCreatesAppAccount
 
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host ""; Write-Host "$script:Run tests, $script:Failed failed"
