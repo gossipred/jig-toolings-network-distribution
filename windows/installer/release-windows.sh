@@ -261,6 +261,7 @@ with open(checksums_path, "w") as f:
 print(f"  Updated: {checksums_path}")
 PYEOF
 
+bash "$DIST_REPO/tools/sign-latest-json.sh" "$DIST_REPO/shared/latest.json" "$CORE_REPO"
 echo "[5/5] Manifests updated."
 echo ""
 
@@ -299,7 +300,7 @@ echo ""
 echo " Next steps:"
 echo "   1. Test the ZIP on a Windows machine."
 echo "   2. cd $DIST_REPO"
-echo "   3. git add shared/latest.json releases/$VERSION/"
+echo "   3. git add shared/latest.json shared/latest.json.sig releases/$VERSION/"
 echo "   4. git commit -m \"Release v${VERSION} — Windows package\""
 echo "   5. git push origin main"
 echo "   6. Confirm GitHub Release v${VERSION} has: $ZIP_NAME, $EXE_NAME, XAMPP-installer.exe"

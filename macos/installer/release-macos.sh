@@ -204,6 +204,7 @@ with open(checksums_path, "w") as f:
 print(f"  Updated: {checksums_path}")
 PYEOF
 
+bash "$DIST_REPO/tools/sign-latest-json.sh" "$DIST_REPO/shared/latest.json" "$CORE_REPO"
 echo "[4/4] Manifests updated."
 echo ""
 
@@ -235,7 +236,7 @@ echo "   1. Test the ZIP on a Mac (a real cold start on a machine where"
 echo "      port 8080 is free, not this dev Mac — see README-FIRST.md's"
 echo "      'Known limitation' note)."
 echo "   2. cd $DIST_REPO"
-echo "   3. git add shared/latest.json releases/$VERSION/ macos/launcher/"
+echo "   3. git add shared/latest.json shared/latest.json.sig releases/$VERSION/ macos/launcher/"
 echo "   4. git commit -m \"Release v${VERSION} — macOS package\""
 echo "   5. git push origin main"
 echo "   6. gh release create v${VERSION} $OUTPUT --repo gossipred/jig-toolings-network-distribution"

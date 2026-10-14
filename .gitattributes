@@ -1,0 +1,3 @@
+# Signed byte-for-byte: never convert line endings.
+shared/latest.json -text
+shared/latest.json.sig -text

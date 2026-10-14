@@ -36,13 +36,15 @@ So, for each change:
 - [ ] Production DB: apply new migrations to `web_fixture_management` **before** restarting jig.aurastudio.studio on the new jar
 - [ ] Release notes start with "how to update" (online steps)
 - Guide headers (INSTALL-GUIDE-*, USER-GUIDE-*) are stamped with the release version automatically by the release scripts; renamed/removed files go in `scripts/obsolete-files.txt`
+- [ ] `shared/latest.json.sig` was written by the release script (`tools/sign-latest-json.sh`). After **any** later edit of `latest.json` (by hand or by the other platform's release script), sign again: `bash tools/sign-latest-json.sh shared/latest.json <core repo>`. v2.0+ installations refuse an unsigned or stale `latest.json`.
 
 ## Publishing order
 
 1. push code (without `shared/latest.json`)
 2. `gh release create` with all assets
 3. download and compare sha256 with `latest.json`
-4. push `shared/latest.json` last (otherwise customers see the update before the files exist)
+4. push `shared/latest.json` **and** `shared/latest.json.sig` last, in the same commit (otherwise customers see the update before the files exist)
+5. GitHub caches raw files for about 5 minutes: wait 5 minutes, check that `curl -s <raw latest.json URL>.sig` is the new signature, then announce the release. Until then v2.x systems simply report "up to date".
 
 ## After publishing
 
@@ -51,3 +53,9 @@ So, for each change:
       run it and update WordPress page 2651 (steps in that folder's README). Standalone releases go in `STANDALONE`.
 - [ ] Restart the live server on the new jar (`launchctl kickstart -k gui/501/com.jj.jig-spring`) so it does not report an update to itself
 - [ ] Test machines: after a rollback test, delete the fake `database/migration-*-vmtest-*.sql` files, or the next real update will fail on them
+
+## Update-signing keys
+
+- Main private key: `~/.jig-update-signing/update-signing-private.pem` (never in git). Public keys ship in `app/` and inside the jar; they can never be changed for installed systems.
+- Backup private key: offline only — encrypted DMG in iCloud Drive `jig-signing-keys/` and on the backup USB stick (password in Apple's Passwords app). Made by CORE `scripts/backup-signing-keys.sh`.
+- Main key lost or leaked: mount the DMG, sign with `JIG_UPDATE_SIGNING_KEY=<mounted>/update-signing/update-signing-backup-private.pem bash tools/sign-latest-json.sh …`, and ship a release whose program carries a new key pair; then create a new backup.
