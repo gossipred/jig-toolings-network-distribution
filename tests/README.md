@@ -13,3 +13,4 @@ Override the core repo location with JIG_CORE_REPO=/path/to/core.
 Text and packaging checks (no database needed):
 
     bash tests/test-docs.sh
+    bash tests/test-installer.sh   # needs makensis (brew install makensis)
