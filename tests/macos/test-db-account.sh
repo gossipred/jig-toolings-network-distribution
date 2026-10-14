@@ -321,6 +321,23 @@ test_restore_backup_uses_settings_account() {
     ! grep -q 'MYSQL_PWD=' "$MAC_SCRIPTS/restore-backup.command"
 }
 
+test_update_sets_taipei_for_old_install() {
+    reset_db || return 1; install_v143_db || return 1; make_update tzold
+    echo "app.timezone=" >> "$SRC/app/application.properties"   # the v2.0 template ships it blank
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/tzold.out" 2>&1 || { cat "$WORK_ROOT/tzold.out"; return 1; }
+    check "$(prop_of "$PKG/app/application.properties" app.timezone)" "Asia/Taipei" "old install keeps Taipei time" &&
+    check "$(grep -c '^app.timezone=' "$PKG/app/application.properties")" "1" "only one app.timezone line"
+}
+
+test_update_keeps_existing_timezone() {
+    reset_db || return 1; install_v143_db || return 1; make_update tzkeep
+    echo "app.timezone=Europe/Berlin" >> "$PKG/app/application.properties"
+    cp "$PKG/app/application.properties" "$BK/app/application.properties"
+    echo "app.timezone=" >> "$SRC/app/application.properties"
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/tzkeep.out" 2>&1 || { cat "$WORK_ROOT/tzkeep.out"; return 1; }
+    check "$(prop_of "$PKG/app/application.properties" app.timezone)" "Europe/Berlin" "customer's own zone kept"
+}
+
 run_test test_sandbox_is_not_production
 run_test test_db_load_parses_props
 run_test test_db_load_defaults_for_old_props
@@ -350,4 +367,6 @@ run_test test_ping_when_root_has_password
 run_test test_restore_backup_uses_settings_account
 run_test test_second_update_success_migration
 run_test test_second_update_broken_migration
+run_test test_update_sets_taipei_for_old_install
+run_test test_update_keeps_existing_timezone
 finish

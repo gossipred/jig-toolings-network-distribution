@@ -86,6 +86,14 @@ try {
         }
     }
 
+    # -- 2b. Time zone for installations older than v2.0 ------------------
+    # Their data is in Taipei time; without this the merge would add the
+    # template's blank app.timezone (= this computer's zone).
+    if (-not $old.Contains("app.timezone")) {
+        Set-JigProp $PropsPath "app.timezone" "Asia/Taipei"
+        $old["app.timezone"] = "Asia/Taipei"
+    }
+
     # -- 3. Settings merge -----------------------------------------------
     Write-Host "    Updating settings (your port and database settings are kept)..."
     $lines = [Collections.Generic.List[string]]::new([IO.File]::ReadAllLines($PropsPath))

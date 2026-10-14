@@ -202,6 +202,25 @@ function Test-NoWindowsScriptUsesRoot {
     Check (@($hits) -join ",") "" "only the full uninstall may use root"
 }
 
+function Test-UpdateSetsTaipeiForOldInstall {
+    Reset-Db; Install-V143Db; New-Update "tzold"
+    Add-Content (Join-Path $Src "app/application.properties") "app.timezone="
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 0 "exit code"
+    $props = Join-Path $Pkg "app/application.properties"
+    Check (PropOf $props "app.timezone") "Asia/Taipei" "old install keeps Taipei time"
+    Check (@(Get-Content $props | Where-Object { $_ -like "app.timezone=*" }).Count) 1 "only one app.timezone line"
+}
+function Test-UpdateKeepsExistingTimezone {
+    Reset-Db; Install-V143Db; New-Update "tzkeep"
+    Add-Content (Join-Path $Pkg "app/application.properties") "app.timezone=Europe/Berlin"
+    Copy-Item (Join-Path $Pkg "app/application.properties") (Join-Path $Bk "app/application.properties") -Force
+    Add-Content (Join-Path $Src "app/application.properties") "app.timezone="
+    & $PsExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Src "scripts/apply-update.ps1") -Source $Src -PackageDir $Pkg -BackupDir $Bk -MySqlBin $Bin | Out-Host
+    Check $LASTEXITCODE 0 "exit code"
+    Check (PropOf (Join-Path $Pkg "app/application.properties") "app.timezone") "Europe/Berlin" "customer's own zone kept"
+}
+
 Run-Test Test-ConfigParsesProps
 Run-Test Test-PingRootNoPassword
 Run-Test Test-SpecialCharPassword
@@ -221,6 +240,9 @@ Run-Test Test-NoWindowsScriptUsesRoot
 
 Run-Test Test-SecondUpdateSuccessMigration
 Run-Test Test-SecondUpdateBrokenMigration
+
+Run-Test Test-UpdateSetsTaipeiForOldInstall
+Run-Test Test-UpdateKeepsExistingTimezone
 
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host ""; Write-Host "$script:Run tests, $script:Failed failed"
