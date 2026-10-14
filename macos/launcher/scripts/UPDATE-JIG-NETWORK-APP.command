@@ -45,16 +45,46 @@ echo "Installed version : $CURRENT_VERSION"
 echo "Checking server   : $UPDATE_URL"
 echo
 
-LATEST_JSON="$(curl -s -m 10 "$UPDATE_URL" 2>/dev/null)"
-if [ -z "$LATEST_JSON" ]; then
+# Saved to a file, not a variable: the signature covers the exact bytes.
+JSON_FILE="$(mktemp)"
+SIG_FILE="$(mktemp)"
+if ! curl -sf -m 10 -o "$JSON_FILE" "$UPDATE_URL" 2>/dev/null || [ ! -s "$JSON_FILE" ]; then
+    rm -f "$JSON_FILE" "$SIG_FILE"
     echo "[ERROR] Update check failed. No response from server."
     pause_close
     return 1
 fi
 
+# v2.0+: latest.json must be signed (latest.json.sig, Base64 SHA256withRSA) by
+# the update-signing key or its offline backup; both public keys ship in app/.
+signature_ok() {
+    local sig_bin pub
+    curl -sf -m 10 -o "$SIG_FILE" "$UPDATE_URL.sig" 2>/dev/null || return 1
+    sig_bin="$(mktemp)"
+    tr -d ' \r\n' < "$SIG_FILE" | /usr/bin/openssl base64 -d -A > "$sig_bin" 2>/dev/null
+    for pub in "$APP_DIR/update-signing-public.pem" "$APP_DIR/update-signing-backup-public.pem"; do
+        if [ -s "$sig_bin" ] && [ -f "$pub" ] \
+            && /usr/bin/openssl dgst -sha256 -verify "$pub" -signature "$sig_bin" "$JSON_FILE" > /dev/null 2>&1; then
+            rm -f "$sig_bin"
+            return 0
+        fi
+    done
+    rm -f "$sig_bin"
+    return 1
+}
+if ! signature_ok; then
+    rm -f "$JSON_FILE" "$SIG_FILE"
+    mkdir -p "$PACKAGE_DIR/logs"
+    echo "FAILED_NOCHANGE;$CURRENT_VERSION;;$(date +%Y-%m-%d_%H-%M-%S);The update information has an invalid signature. Update stopped. Contact aurastudio.studio.service@gmail.com" > "$PACKAGE_DIR/logs/last-update.txt"
+    echo "[ERROR] The update information has an invalid signature. Update stopped."
+    echo "        Please contact aurastudio.studio.service@gmail.com"
+    echo
+    pause_close
+    return 1
+fi
+rm -f "$SIG_FILE"
+
 # plutil reads JSON and is built into macOS (python3 is not, on a Mac without Xcode tools).
-JSON_FILE="$(mktemp)"
-printf '%s' "$LATEST_JSON" > "$JSON_FILE"
 json_get() { plutil -extract "$1" raw -o - "$JSON_FILE" 2>/dev/null; }
 LATEST_VERSION="$(json_get latestVersion)"
 RELEASE_DATE="$(json_get releaseDate)"
