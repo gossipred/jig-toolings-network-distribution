@@ -16,6 +16,7 @@ LOCAL_URL="http://localhost:$JIG_PORT"
 LOGIN_URL="http://localhost:$JIG_PORT/login"
 
 mkdir -p "$LOG_DIR"
+bash "$SCRIPT_DIR/set-app-icon.sh"
 
 echo "============================================================"
 echo " Jig & Toolings Management System - macOS Network App"

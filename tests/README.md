@@ -14,3 +14,4 @@ Text and packaging checks (no database needed):
 
     bash tests/test-docs.sh
     bash tests/test-installer.sh   # needs makensis (brew install makensis)
+    bash tests/macos/test-app-icon.sh
