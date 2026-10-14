@@ -13,6 +13,20 @@ jig_read_port() {
     echo "$p"
 }
 
+# Prints app.https.port when app.https.enabled=true in <package>/app/application.properties
+# (default 8443); prints nothing when HTTPS is off.
+jig_read_https_port() {
+    local props="$1/app/application.properties" on="" p=""
+    [ -f "$props" ] || return 0
+    on="$(grep -E '^[[:space:]]*app\.https\.enabled[[:space:]]*=' "$props" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+    [ "$on" = "true" ] || return 0
+    p="$(grep -E '^[[:space:]]*app\.https\.port[[:space:]]*=' "$props" | tail -n 1 | cut -d= -f2- | tr -d '[:space:]')"
+    case "$p" in
+        ''|*[!0-9]*) p=8443 ;;
+    esac
+    echo "$p"
+}
+
 # Prints the PIDs of Java processes listening on a port (never other programs).
 jig_java_pids_on_port() {
     local pid

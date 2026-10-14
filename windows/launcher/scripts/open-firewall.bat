@@ -24,5 +24,15 @@ if errorlevel 1 (
 
 echo.
 echo [OK] Other computers can now connect to port %JIG_PORT%.
+if defined JIG_HTTPS_PORT (
+    netsh advfirewall firewall delete rule name="Jig Toolings System %JIG_HTTPS_PORT%" >nul 2>&1
+    netsh advfirewall firewall add rule name="Jig Toolings System %JIG_HTTPS_PORT%" dir=in action=allow protocol=TCP localport=%JIG_HTTPS_PORT%
+    if errorlevel 1 (
+        echo [ERROR] Could not add the firewall rule for HTTPS port %JIG_HTTPS_PORT%.
+        pause
+        exit /b 1
+    )
+    echo [OK] Other computers can now connect to HTTPS port %JIG_HTTPS_PORT%.
+)
 pause
 exit /b 0

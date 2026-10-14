@@ -9,6 +9,11 @@ echo.
 ipconfig | findstr /i "IPv4"
 echo.
 echo Other users can open:
-echo http://SERVER-IP:%JIG_PORT%
+if defined JIG_HTTPS_PORT (
+    echo https://SERVER-IP:%JIG_HTTPS_PORT%
+    echo http://SERVER-IP:%JIG_PORT% also works and switches to HTTPS.
+) else (
+    echo http://SERVER-IP:%JIG_PORT%
+)
 echo.
 pause

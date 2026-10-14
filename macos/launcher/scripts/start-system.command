@@ -11,6 +11,7 @@ JAR_FILE="$APP_DIR/jig-management-system.jar"
 . "$SCRIPT_DIR/jig-port.sh"
 . "$SCRIPT_DIR/jig-db.sh"
 JIG_PORT="$(jig_read_port "$PACKAGE_DIR")"
+JIG_HTTPS_PORT="$(jig_read_https_port "$PACKAGE_DIR")"
 LOCAL_URL="http://localhost:$JIG_PORT"
 LOGIN_URL="http://localhost:$JIG_PORT/login"
 
@@ -124,6 +125,7 @@ if check_login; then
     echo
     echo "Local URL: $LOCAL_URL"
     echo "LAN users can use this Mac's IP address with port $JIG_PORT."
+    [ -n "$JIG_HTTPS_PORT" ] && echo "HTTPS is on: other computers open https://THIS-MAC-IP:$JIG_HTTPS_PORT"
     read -r -p "Press Enter to close..."
     exit 0
 fi
@@ -176,6 +178,7 @@ fi
 echo
 echo "[OK] The system is ready."
 echo "Local URL: $LOCAL_URL"
+[ -n "$JIG_HTTPS_PORT" ] && echo "HTTPS is on: other computers open https://THIS-MAC-IP:$JIG_HTTPS_PORT"
 echo
 echo "First login: admin / 123456 (change the password right away)."
 echo "A 30-day free trial starts automatically on first launch."

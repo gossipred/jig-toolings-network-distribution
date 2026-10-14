@@ -101,6 +101,7 @@ if not errorlevel 1 (
     echo.
     echo Local URL: %LOCAL_URL%
     echo LAN users can use this PC's IP address with port %JIG_PORT%.
+    if defined JIG_HTTPS_PORT echo HTTPS is on: other computers open https://THIS-PC-IP:%JIG_HTTPS_PORT%
     pause
     exit /b 0
 )
@@ -147,6 +148,7 @@ exit /b 1
 echo.
 echo [OK] The system is ready.
 echo Local URL: %LOCAL_URL%
+if defined JIG_HTTPS_PORT echo HTTPS is on: other computers open https://THIS-PC-IP:%JIG_HTTPS_PORT%
 echo.
 echo First login: admin / 123456 (change the password right away).
 echo A 30-day free trial starts automatically on first launch.
