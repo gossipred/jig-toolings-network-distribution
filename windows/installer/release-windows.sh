@@ -92,6 +92,7 @@ echo ""
 # ── Step 3: Sync launcher scripts from distribution repo ─────────────────────
 echo "[3/5] Syncing launcher scripts from distribution repo..."
 cp "$LAUNCHER_DIR/START-JIG-NETWORK-APP.bat" "$PACKAGE_DIR/START-JIG-NETWORK-APP.bat"
+cp "$DIST_REPO/docs/install-guides/"*-Windows*.txt "$PACKAGE_DIR/"
 for f in "$LAUNCHER_DIR/scripts/"*.bat "$LAUNCHER_DIR/scripts/"*.ps1 "$LAUNCHER_DIR/scripts/"*.txt; do
     [ -f "$f" ] && cp "$f" "$PACKAGE_DIR/scripts/"
 done

@@ -97,6 +97,7 @@ echo ""
 # ── Step 2.5: Sync launcher scripts from distribution repo ───────────────────
 echo "[2.5] Syncing launcher scripts from distribution repo..."
 cp "$LAUNCHER_DIR/START-JIG-NETWORK-APP.command" "$PACKAGE_DIR/START-JIG-NETWORK-APP.command"
+cp "$DIST_REPO/docs/install-guides/"*-macOS*.txt "$PACKAGE_DIR/"
 for f in "$LAUNCHER_DIR/scripts/"*; do
     [ -f "$f" ] && cp "$f" "$PACKAGE_DIR/scripts/"
 done

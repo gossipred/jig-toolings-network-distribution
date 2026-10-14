@@ -51,6 +51,11 @@ mac-network-app/backups/update-backup-日期時間/
 ────────────────────────────────────────
 • 顯示「Download or verification failed. Nothing was changed.」
   → 系統完全沒有被更動（多半是網路問題），重新啟動系統即可，稍後再試。
+• 顯示「The update information has an invalid signature. Update stopped.」
+  → 更新資訊沒有通過數位簽章檢查，系統完全沒有被更動。請不要自行下載安裝，
+    截圖寄給 aurastudio.studio.service@gmail.com。
+• 顯示「The update failed. Version x.x.x and its database were restored.」
+  → 更新沒有完成，已自動退回原本的版本和資料庫，系統可以照常使用。
 • 顯示「The update stopped part-way」
   → 請先不要啟動系統，截圖整個視窗寄給 aurastudio.studio.service@gmail.com，
     我們會依照 backups/update-backup-日期時間/ 的備份協助您恢復。
@@ -63,6 +68,19 @@ v1.3.0 以前的更新程式只會換主程式，請先升級一次，之後就�
 update-download.sh 複製到原本的 scripts 資料夾（取代），
 再執行 UPDATE-JIG-NETWORK-APP.command。
 下載頁：https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+────────────────────────────────────────
+從 v1.x 更新到 v2.0 會有哪些變化？
+────────────────────────────────────────
+• 資料、授權、上傳的附件、設定全部保留。
+• 資料庫連線自動從 root 換成系統專用帳號 jig_app（密碼自動產生，
+  存在 app/application.properties）。之後可以幫 XAMPP 的 root 設密碼。
+• 密碼少於 8 碼、和帳號相同、或是常見密碼（例如 123456）的使用者，
+  更新後第一次登入會被要求設定新密碼。
+• 同一個帳號連續輸錯 5 次密碼會鎖 15 分鐘；Admin 可在「使用者管理」按「解鎖」。
+• 時間維持台北時間；需要時可在「系統設定 → 時區」修改。
+• 介面可切換 English／繁體中文／简体中文（每頁右上角）。
+• 任何一步失敗都會自動退回原本的版本。
 
 ────────────────────────────────────────
 什麼情況不能線上更新？
@@ -120,6 +138,13 @@ If the update fails
 - "Download or verification failed. Nothing was changed."
   -> Nothing was changed (usually a network problem). Start the system again
      and retry later.
+- "The update information has an invalid signature. Update stopped."
+  -> The update information failed the digital signature check. Nothing
+     was changed. Do not download and install it yourself; send a
+     screenshot to aurastudio.studio.service@gmail.com.
+- "The update failed. Version x.x.x and its database were restored."
+  -> The update did not finish and the previous version and database
+     were put back. The system can be used as usual.
 - "The update stopped part-way"
   -> Do not start the system yet. Send a screenshot of the window to
      aurastudio.studio.service@gmail.com; we will help you recover from
@@ -134,6 +159,23 @@ From the latest zip's scripts folder, copy UPDATE-JIG-NETWORK-APP.command and
 update-download.sh over the ones in your scripts folder, then run
 UPDATE-JIG-NETWORK-APP.command.
 Downloads: https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
+
+----------------------------------------
+What changes when updating from v1.x to v2.0?
+----------------------------------------
+- Data, license, attachments and settings are all kept.
+- The database connection switches from root to the system's own account
+  jig_app (random password, saved in app/application.properties). You may
+  give the XAMPP root account a password afterwards.
+- Users whose password is shorter than 8 characters, equals the account
+  name, or is a common password (e.g. 123456) must set a new password the
+  first time they sign in after the update.
+- After 5 wrong passwords an account is locked for 15 minutes; an Admin can
+  unlock it in User Management.
+- The time stays Taipei time; change it in System Settings -> Time Zone if needed.
+- The interface can be switched between English, 繁體中文 and 简体中文
+  (top right of every page).
+- If any step fails, the previous version is restored automatically.
 
 ----------------------------------------
 When is an online update not possible?

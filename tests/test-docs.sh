@@ -50,5 +50,27 @@ for f in "$GUIDES"/*.txt; do
     check; grep -qF "$EMAIL" "$f" || fail "support address missing: $(basename "$f")"
 done
 
+# 6. Guides describe the v2.0 sign-in and database account (facts in the plan's Global Constraints).
+need() { # need <file> <text>...
+    local f="$1"; shift
+    local t
+    for t in "$@"; do
+        check; grep -qF -- "$t" "$GUIDES/$f" || fail "$f: missing \"$t\""
+    done
+}
+for os in Windows macOS; do
+    need "INSTALL-GUIDE-$os-en.txt" "supervisor" "asks for a new password" "at least 8 characters" \
+        "locked for 15 minutes" "Unlock" "jig_app" "Time Zone" "HTTPS" "English"
+    need "INSTALL-GUIDE-$os-zh-TW.txt" "supervisor" "要求設定新密碼" "至少 8 碼" "鎖 15 分鐘" "解鎖" \
+        "jig_app" "時區" "HTTPS" "简体中文"
+    need "UPDATE-GUIDE-$os.txt" "v2.0" "jig_app" "invalid signature" "were restored" "Taipei" "台北"
+done
+
+# 7. Release scripts copy the guides into the package, so the zip always has the originals.
+check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-Windows*.txt "$PACKAGE_DIR/"' "$DIST/windows/installer/release-windows.sh" ||
+    fail "release-windows.sh does not copy the guides"
+check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-macOS*.txt "$PACKAGE_DIR/"' "$DIST/macos/installer/release-macos.sh" ||
+    fail "release-macos.sh does not copy the guides"
+
 echo "$RUN checks, $FAILED failed"
 [ "$FAILED" -eq 0 ]

@@ -10,7 +10,7 @@ https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 需要下載的檔案：
   1. XAMPP-installer.dmg（MySQL 資料庫）
-  2. jig-toolings-network-macos-1.4.0.zip（治具系統）
+  2. jig-toolings-network-macos-x.x.x.zip（治具系統）
 
 XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.html
 （建議用下載區的 XAMPP-installer.dmg，是我們測試過的版本）
@@ -40,7 +40,7 @@ macOS 開啟下載的檔案時可能跳出「無法打開，因為無法確認�
 ================================================================
 第 2 步：解壓縮治具系統
 ================================================================
-1. 點兩下「jig-toolings-network-macos-1.4.0.zip」解壓縮
+1. 點兩下「jig-toolings-network-macos-x.x.x.zip」解壓縮
 2. 把解壓出來的「mac-network-app」資料夾搬到固定位置
    （例如「應用程式」或自己的使用者資料夾，不要放在「下載」後就刪掉）
 3. 【一次解除所有腳本的安全性封鎖（建議）】
@@ -73,8 +73,13 @@ macOS 開啟下載的檔案時可能跳出「無法打開，因為無法確認�
 1. 點兩下 mac-network-app 裡的「START-JIG-NETWORK-APP.command」
 2. 終端機視窗會自動檢查 Java、MySQL、8080 port
 3. 看到「[OK] The system is ready.」後，瀏覽器會自動開啟登入頁
-4. 預設帳號 admin ／ 密碼 123456
-   ⚠️ 登入後請立刻到「帳號設定」修改密碼！
+4. 用 admin ／ 123456 登入。其他預設帳號（supervisor、engineer、operator）
+   密碼也是 123456。
+   每個帳號第一次登入時，系統會要求設定新密碼：
+   • 至少 8 碼
+   • 不能和帳號相同，也不能是常見密碼（例如 12345678）
+   ⚠️ 同一個帳號連續輸錯 5 次密碼會鎖 15 分鐘；
+      Admin 可以提早解鎖：使用者管理（User Management）→ 解鎖（Unlock）。
 
    如果看到 [ERROR]：
    - MySQL is not responding → 再執行一次 scripts/setup-mysql-autostart.command
@@ -93,6 +98,26 @@ macOS 開啟下載的檔案時可能跳出「無法打開，因為無法確認�
   3. 確認收款後，授權檔（.lic）會寄到您的信箱
   4. 在「授權」頁面選擇 .lic 檔 → Install License
 • 授權綁定「伺服器電腦」，其他電腦用瀏覽器連線不需要另外授權
+
+================================================================
+【資料庫帳號】
+================================================================
+系統使用自己的資料庫帳號「jig_app」（安裝時自動建立，密碼隨機產生，
+存在 app/application.properties），不再使用 XAMPP 的 root，
+所以之後可以幫 root 設密碼。搬移系統到別的資料夾時，
+請保留 app/application.properties。
+
+================================================================
+【語言、時區與 HTTPS】
+================================================================
+• 語言：English、繁體中文、简体中文，在每一頁右上角或登入頁切換，
+  每個使用者的選擇會被記住。
+• 時區：系統設定（System Settings）→ 時區（Time Zone），預設是這台電腦的時區；
+  修改後要重新啟動系統。
+• HTTPS（可選）：系統設定 → HTTPS → 開啟 HTTPS，重新啟動系統，
+  其他電腦改用
+  https://伺服器IP:8443 。第一次瀏覽器會警告（系統自己產生憑證），
+  連線仍然有加密。詳見系統設定裡的「HTTPS 說明」按鈕。
 
 ================================================================
 【同公司其他電腦使用】

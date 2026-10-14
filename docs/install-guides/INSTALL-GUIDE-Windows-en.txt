@@ -9,8 +9,8 @@
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
 Files you need (choose one method):
-  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-1.4.0.exe
-  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-1.4.0.zip
+  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-x.x.x.exe
+  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-x.x.x.zip
 
 XAMPP is also available from the official website:
 https://www.apachefriends.org/download.html
@@ -37,16 +37,16 @@ STEP 1: Install XAMPP (MySQL database - required for both methods, once)
    - Method B: click "Start" on the MySQL row; green means it is running
 
 ================================================================
-STEP 2 (Method A): Run the setup wizard JigToolingsSetup-1.4.0.exe
+STEP 2 (Method A): Run the setup wizard JigToolingsSetup-x.x.x.exe
 ================================================================
-1. Double-click "JigToolingsSetup-1.4.0.exe"
+1. Double-click "JigToolingsSetup-x.x.x.exe"
    If "Windows protected your PC" appears -> "More info" -> "Run anyway"
 2. Click "Next"; the default folder is C:\JigSystem, or choose another (e.g. D:\JigSystem)
    !! Do not choose C:\Program Files - the system writes data into its own folder
 3. The wizard automatically:
    - sets MySQL to start automatically with Windows
    - creates the database
-   - creates the desktop shortcut
+   - creates the desktop shortcut "Jig Toolings 治具管理系統"
 4. On the last page tick "Launch" -> Finish
 
    "XAMPP not detected"      -> please complete Step 1 first
@@ -73,8 +73,13 @@ STEP 3: Start and sign in
 1. Double-click the desktop shortcut (Method B: START-JIG-NETWORK-APP.bat)
 2. A console window checks Java, MySQL and port 8080
 3. After "[OK] The system is ready." the login page opens in your browser
-4. Default account: admin / password: 123456
-   !! Change the password right after signing in (Account Settings)
+4. Sign in with admin / 123456. The other default accounts (supervisor,
+   engineer, operator) use the same password.
+   The first time each account signs in, the system asks for a new password:
+   - at least 8 characters
+   - not the same as the account name, and not a common password (e.g. 12345678)
+   !! After 5 wrong passwords an account is locked for 15 minutes.
+      An Admin can unlock it earlier: User Management -> Unlock.
 
    If you see [ERROR]:
    - MySQL is not responding     -> start MySQL in XAMPP Control Panel
@@ -94,6 +99,27 @@ STEP 4: Free trial and license
   4. On the "License" page choose the .lic file -> Install License
 - The license is bound to the SERVER computer; browser users on other
   computers do not need their own license.
+
+================================================================
+[DATABASE ACCOUNT]
+================================================================
+The system uses its own database account "jig_app" (created during setup,
+with a random password saved in app\application.properties). It no longer
+uses the XAMPP root account, so you may give root a password later.
+Keep app\application.properties when you move the system to another folder.
+
+================================================================
+[LANGUAGE, TIME ZONE AND HTTPS]
+================================================================
+- Language: English, 繁體中文 or 简体中文 - choose it at the top right of
+  any page or on the login page. Each user's choice is remembered.
+- Time Zone: System Settings -> Time Zone (default: this computer's time
+  zone). Restart the system after changing it.
+- HTTPS (optional): System Settings -> HTTPS -> Turn on HTTPS, restart the
+  system, run scripts\open-firewall.bat as administrator, then other
+  computers open https://(server IP):8443 . Browsers warn the first time
+  because the system makes its own certificate; the connection is still
+  encrypted. Details: the "HTTPS guide" button in System Settings.
 
 ================================================================
 [OTHER COMPUTERS IN THE COMPANY]
