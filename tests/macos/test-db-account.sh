@@ -338,6 +338,22 @@ test_update_keeps_existing_timezone() {
     check "$(prop_of "$PKG/app/application.properties" app.timezone)" "Europe/Berlin" "customer's own zone kept"
 }
 
+test_timezone_write_failure_rolls_back() {
+    reset_db || return 1; install_v143_db || return 1; make_update tzfail
+    echo "app.timezone=" >> "$SRC/app/application.properties"
+    # Inject failure only into this throwaway installation's property writer.
+    cat >> "$SRC/scripts/jig-db.sh" <<'STUB'
+jig_props_set() { return 1; }
+STUB
+    bash "$SRC/scripts/apply-update.sh" "$SRC" "$PKG" "$BK" > "$WORK_ROOT/tzfail.out" 2>&1
+    local code=$?
+    grep -q "Could not set the time zone" "$WORK_ROOT/tzfail.out" &&
+    check "$code" "3" "timezone write failure rolls back" &&
+    check "$(prop_of "$PKG/app/application.properties" app.version)" "1.4.3" "old version restored" &&
+    check "$(prop_of "$PKG/app/application.properties" app.timezone)" "" "old settings restored" &&
+    check "$(root_sql -e 'SELECT COUNT(*) FROM web_fixture_management.users')" "4" "data intact"
+}
+
 run_test test_sandbox_is_not_production
 run_test test_db_load_parses_props
 run_test test_db_load_defaults_for_old_props
@@ -369,4 +385,5 @@ run_test test_second_update_success_migration
 run_test test_second_update_broken_migration
 run_test test_update_sets_taipei_for_old_install
 run_test test_update_keeps_existing_timezone
+run_test test_timezone_write_failure_rolls_back
 finish

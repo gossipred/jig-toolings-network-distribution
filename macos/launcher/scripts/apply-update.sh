@@ -113,7 +113,7 @@ fi
 # -- 2b. Time zone for installations older than v2.0 ----------------------
 # Their data is in Taipei time; without this the merge would add the template's
 # blank app.timezone (= this computer's zone).
-grep -qE '^[[:space:]]*app\.timezone[[:space:]]*=' "$PROPS" || jig_props_set "$PROPS" app.timezone Asia/Taipei
+grep -qE '^[[:space:]]*app\.timezone[[:space:]]*=' "$PROPS" || jig_props_set "$PROPS" app.timezone Asia/Taipei || { fail "Could not set the time zone"; return $?; }
 
 # -- 3. Settings merge -----------------------------------------------------
 echo "    Updating settings (your port and database settings are kept)..."
