@@ -180,7 +180,7 @@ Section "主程式" SecMain
     Pop $1
     ${If} $1 != 0
       MessageBox MB_ICONEXCLAMATION|MB_OK \
-        "資料庫或設定升級失敗（錯誤碼：$1）。$\n$\n舊版的檔案與資料庫備份在：$\n$BACKUPDIR$\n$\n請先不要啟動系統，並聯絡 gossipred5598@gmail.com。"
+        "資料庫或設定升級失敗（錯誤碼：$1）。$\n$\n舊版的檔案與資料庫備份在：$\n$BACKUPDIR$\n$\n請先不要啟動系統，並聯絡 aurastudio.studio.service@gmail.com。"
     ${EndIf}
   ${ElseIf} $0 == 0
     DetailPrint "建立資料庫..."

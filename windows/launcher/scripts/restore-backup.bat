@@ -90,7 +90,7 @@ if errorlevel 1 (
     echo.
     echo [ERROR] Restore failed. See the message above.
     echo         If the database was already changed, the previous data is in backups\before-restore-*.sql.
-    echo         Contact gossipred5598@gmail.com for help.
+    echo         Contact aurastudio.studio.service@gmail.com for help.
     pause
     exit /b 1
 )

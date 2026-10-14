@@ -9,3 +9,7 @@ These tests run the real launcher scripts against a throwaway MariaDB
     bash tests/test-mariadb.sh stop
 
 Override the core repo location with JIG_CORE_REPO=/path/to/core.
+
+Text and packaging checks (no database needed):
+
+    bash tests/test-docs.sh

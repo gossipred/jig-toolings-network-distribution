@@ -104,7 +104,7 @@ if ! ERR="$(jig_mysql "$JIG_DB_NAME" < "$WORK/restore.sql" 2>&1)"; then
     rm -rf "$WORK"
     echo "[ERROR] Restore failed: $ERR"
     echo "        Previous data: $SAFETY"
-    echo "        Contact gossipred5598@gmail.com for help."
+    echo "        Contact aurastudio.studio.service@gmail.com for help."
     pause_exit 1; return
 fi
 rm -rf "$WORK"

@@ -77,7 +77,7 @@ Q：改壞了怎麼辦？
 A：app 資料夾內有自動備份 application.properties.bak-日期時間，
    停止系統後把它複製回 application.properties 即可。
 
-問題聯絡：gossipred5598@gmail.com
+問題聯絡：aurastudio.studio.service@gmail.com
 
 ################################################################
   ENGLISH
@@ -154,5 +154,5 @@ A: The app folder contains an automatic backup named
    application.properties.bak-DATE-TIME. Stop the system and copy it
    back over application.properties.
 
-Contact: gossipred5598@gmail.com
+Contact: aurastudio.studio.service@gmail.com
 ================================================================

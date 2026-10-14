@@ -62,7 +62,7 @@
 還原錯了想退回？
 ────────────────────────────────────────
 還原前的資料存在 backups\before-restore-日期時間.sql。
-請聯絡我們協助還原：gossipred5598@gmail.com
+請聯絡我們協助還原：aurastudio.studio.service@gmail.com
 
 ────────────────────────────────────────
 常見問題
@@ -73,7 +73,7 @@ A：backups\auto 裡沒有備份。請確認自動備份有開啟，或把外接
 Q：顯示「MySQL is not responding」？
 A：開啟 XAMPP Control Panel，按 MySQL 的 Start，再執行一次。
 
-問題聯絡：gossipred5598@gmail.com
+問題聯絡：aurastudio.studio.service@gmail.com
 
 ################################################################
   ENGLISH
@@ -127,13 +127,13 @@ Restoring on a new computer (or after reinstalling)
 4. Type YES to restore
 5. Copy the old uploads-mirror contents into the new uploads folder
 6. The license is bound to the computer, so request a new one with the new
-   Machine ID: contact gossipred5598@gmail.com
+   Machine ID: contact aurastudio.studio.service@gmail.com
 
 ----------------------------------------
 Undo a restore
 ----------------------------------------
 The data from before the restore is in backups\before-restore-DATE-TIME.sql.
-Contact us and we will help: gossipred5598@gmail.com
+Contact us and we will help: aurastudio.studio.service@gmail.com
 
 ----------------------------------------
 FAQ
@@ -145,5 +145,5 @@ A: backups\auto is empty. Check that automatic backup is on, or drag a zip
 Q: "MySQL is not responding"?
 A: Open XAMPP Control Panel, click Start on MySQL, then run the tool again.
 
-Contact: gossipred5598@gmail.com
+Contact: aurastudio.studio.service@gmail.com
 ================================================================

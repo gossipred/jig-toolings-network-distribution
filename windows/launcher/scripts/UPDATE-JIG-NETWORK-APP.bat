@@ -247,7 +247,7 @@ if not "%UPDATE_RESULT%"=="0" (
     echo [ERROR] The update stopped part-way and could not be undone automatically.
     echo         Your backup is in:
     echo         %BACKUP_DIR%
-    echo         Please send a screenshot of this window to gossipred5598@gmail.com
+    echo         Please send a screenshot of this window to aurastudio.studio.service@gmail.com
     echo         before starting the system again.
     echo.
     %PAUSE%

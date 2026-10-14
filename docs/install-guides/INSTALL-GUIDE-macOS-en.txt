@@ -92,7 +92,7 @@ STEP 6: Free trial and license
   file needed. Remaining days are shown on the "License" page.
 - To purchase a license:
   1. Copy the Machine ID from the "License" page
-  2. Contact gossipred5598@gmail.com with your Machine ID
+  2. Contact aurastudio.studio.service@gmail.com with your Machine ID
   3. The license file (.lic) is emailed to you after payment is confirmed
   4. On the "License" page choose the .lic file -> Install License
 - The license is bound to the SERVER computer; browser users on other
@@ -132,5 +132,5 @@ attachments and data are all kept. See UPDATE-GUIDE-macOS.txt for details.
 
 ================================================================
 [CONTACT]
-Aura Studio  |  gossipred5598@gmail.com
+Aura Studio  |  aurastudio.studio.service@gmail.com
 ================================================================

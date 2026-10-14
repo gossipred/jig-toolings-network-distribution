@@ -52,7 +52,7 @@
 • 顯示「Download or verification failed. Nothing was changed.」
   → 系統完全沒有被更動（多半是網路問題），重新啟動系統即可，稍後再試。
 • 顯示「The update stopped part-way」
-  → 請先不要啟動系統，截圖整個視窗寄給 gossipred5598@gmail.com，
+  → 請先不要啟動系統，截圖整個視窗寄給 aurastudio.studio.service@gmail.com，
     我們會依照 backups\update-backup-日期時間\ 的備份協助您恢復。
 
 ────────────────────────────────────────
@@ -72,7 +72,7 @@ v1.3.0 以前的更新程式只會換主程式，請先升級一次，之後就�
 極少數變更（例如需要換新版 XAMPP）無法線上完成，
 這種情況會在版本說明中特別註明，並提供手動步驟。
 
-問題聯絡：gossipred5598@gmail.com
+問題聯絡：aurastudio.studio.service@gmail.com
 
 ################################################################
   ENGLISH
@@ -124,7 +124,7 @@ If the update fails
      and retry later.
 - "The update stopped part-way"
   -> Do not start the system yet. Send a screenshot of the window to
-     gossipred5598@gmail.com; we will help you recover from
+     aurastudio.studio.service@gmail.com; we will help you recover from
      backups\update-backup-DATE-TIME\.
 
 ----------------------------------------
@@ -145,5 +145,5 @@ When is an online update not possible?
 Rarely (for example when a newer XAMPP is required) a change cannot be made
 online. The release notes will say so and give manual steps.
 
-Contact: gossipred5598@gmail.com
+Contact: aurastudio.studio.service@gmail.com
 ================================================================
