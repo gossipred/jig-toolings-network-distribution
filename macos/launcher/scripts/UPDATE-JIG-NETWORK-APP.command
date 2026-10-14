@@ -2,8 +2,9 @@
 # The update replaces the files in scripts/, including this one. bash reads a
 # script while it runs, so everything lives in main() and the last line calls
 # it and exits: bash has already read the whole file before anything changes.
-# Standalone on purpose (no jig-port.sh), so it can be copied into an older
-# installation to upgrade it. macOS ships bash 3.2 — no bash 4 syntax.
+# Standalone on purpose (no jig-port.sh). To upgrade an older installation by
+# hand, copy it together with app/update-signing-*public.* — without the public
+# keys it refuses every update. macOS ships bash 3.2 — no bash 4 syntax.
 
 # --auto (used by "Update now" on the web page): no questions, no pauses,
 # result written to logs/last-update.txt, system restarted whenever the old or
