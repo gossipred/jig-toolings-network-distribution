@@ -54,11 +54,22 @@ set "RELEASE_DATE="
 set "NOTES_URL="
 set "DOWNLOAD_ZIP_URL="
 set "EXPECTED_SHA256="
+set "BADSIG="
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$info = '%TEMP%\jig-latest-info.txt';" ^
+    "$info = '%TEMP%\jig-latest-info.txt'; $jf = '%TEMP%\jig-latest.json'; $sf = $jf + '.sig';" ^
+    "Remove-Item $jf, $sf -ErrorAction SilentlyContinue;" ^
     "try {" ^
-    "  $j = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 '%UPDATE_URL%').Content | ConvertFrom-Json;" ^
+    "  Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 '%UPDATE_URL%' -OutFile $jf" ^
+    "} catch {" ^
+    "  'ERROR=Cannot reach update server. Check internet connection.' | Out-File $info -Encoding ascii; exit" ^
+    "}" ^
+    "try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 '%UPDATE_URL%.sig' -OutFile $sf } catch { }" ^
+    "$global:LASTEXITCODE = 1;" ^
+    "& '%SCRIPT_DIR%verify-update-signature.ps1' -Json $jf -Sig $sf -AppDir '%APP_DIR%';" ^
+    "if ($LASTEXITCODE -ne 0) { 'BADSIG=1' | Out-File $info -Encoding ascii; exit }" ^
+    "try {" ^
+    "  $j = [IO.File]::ReadAllText($jf, [Text.Encoding]::UTF8) | ConvertFrom-Json;" ^
     "  @(" ^
     "    ('LATEST_VERSION=' + $j.latestVersion)," ^
     "    ('RELEASE_DATE='   + $j.releaseDate)," ^
@@ -67,7 +78,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "    ('SHA256='         + $j.platforms.windows.sha256)" ^
     "  ) | Out-File $info -Encoding ascii" ^
     "} catch {" ^
-    "  'ERROR=Cannot reach update server. Check internet connection.' | Out-File $info -Encoding ascii" ^
+    "  'ERROR=Could not parse version information.' | Out-File $info -Encoding ascii" ^
     "}" 2>nul
 
 if not exist "%TEMP%\jig-latest-info.txt" (
@@ -83,8 +94,20 @@ for /f "usebackq tokens=1* delims==" %%k in ("%TEMP%\jig-latest-info.txt") do (
     if "%%k"=="NOTES_URL"      ( set "NOTES_URL=%%l" )
     if "%%k"=="DOWNLOAD_URL"   ( set "DOWNLOAD_ZIP_URL=%%l" )
     if "%%k"=="SHA256"         ( set "EXPECTED_SHA256=%%l" )
+    if "%%k"=="BADSIG"         ( set "BADSIG=1" )
 )
-del "%TEMP%\jig-latest-info.txt" >nul 2>&1
+del "%TEMP%\jig-latest-info.txt" "%TEMP%\jig-latest.json" "%TEMP%\jig-latest.json.sig" >nul 2>&1
+
+if defined BADSIG (
+    if not exist "%PACKAGE_DIR%\logs" mkdir "%PACKAGE_DIR%\logs"
+    for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "TIMESTAMP=%%t"
+    >"%PACKAGE_DIR%\logs\last-update.txt" echo FAILED_NOCHANGE;%CURRENT_VERSION%;;!TIMESTAMP!;The update information has an invalid signature. Update stopped. Contact aurastudio.studio.service@gmail.com
+    echo [ERROR] The update information has an invalid signature. Update stopped.
+    echo         Please contact aurastudio.studio.service@gmail.com
+    echo.
+    %PAUSE%
+    exit /b 1
+)
 
 if "%LATEST_VERSION%"=="" (
     echo [ERROR] Could not parse version information.
