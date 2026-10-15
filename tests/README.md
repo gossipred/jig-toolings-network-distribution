@@ -19,4 +19,4 @@ Text and packaging checks (no database needed):
     bash tests/macos/test-jig-control.sh
     bash tests/test-runtimes.sh    # after scripts/build-runtimes.sh in the core repo
 
-Control tests use a temporary package and stub all external commands; no database or administrator rights are required. They cover both dry-run and actual stop branches without starting or stopping any real service.
+Control tests use a temporary package and stub all external commands; no database or administrator rights are required. They cover both dry-run and actual stop branches without starting or stopping any real service. The MySQL stop test checks the exact administrator command and runs a stub `mysql.server` to verify `USER=root` and `stop --user=root`.

@@ -18,6 +18,13 @@ printf '#!/usr/bin/env bash\necho START-SYSTEM-RAN\n' > "$WORK/pkg/scripts/start
 printf '#!/usr/bin/env bash\necho STOP-SYSTEM-RAN\n' > "$WORK/pkg/scripts/stop-system.command"
 # Fake mysqladmin: "up" or "down" decided by a file.
 printf '#!/usr/bin/env bash\n[ -f "%s/mysql-up" ]\n' "$WORK" > "$WORK/bin/mysqladmin"
+cat > "$WORK/bin/mysql.server" <<'STUB'
+#!/usr/bin/env bash
+[ "${USER:-}" = root ] || exit 81
+[ "$#" -eq 2 ] && [ "$1" = stop ] && [ "$2" = --user=root ] || exit 82
+echo mysql-server >> "$JIG_CONTROL_TEST_WORK/events"
+rm -f "$JIG_CONTROL_TEST_WORK/mysql-up"
+STUB
 chmod +x "$WORK/bin/mysqladmin" "$WORK/pkg/scripts/"*.command
 # Isolate every process/network probe, even in the original dry-run cases.
 export JIG_CONTROL_TEST_WORK="$WORK"
@@ -38,17 +45,17 @@ cat > "$WORK/bin/osascript" <<'STUB'
 #!/usr/bin/env bash
 # Never execute the requested command or invoke the real macOS authorizer.
 for arg do command_text="$arg"; done
-[ "$command_text" = "/Applications/XAMPP/xamppfiles/xampp stopmysql" ] || exit 97
+[ "$command_text" = "USER=root /Applications/XAMPP/xamppfiles/bin/mysql.server stop --user=root" ] || exit 97
 echo admin >> "$JIG_CONTROL_TEST_WORK/events"
 case "$(cat "$JIG_CONTROL_TEST_WORK/admin-mode")" in
-    stopped) rm -f "$JIG_CONTROL_TEST_WORK/mysql-up" ;;
+    stopped) USER=root "$JIG_CONTROL_TEST_WORK/bin/mysql.server" stop --user=root ;;
     alive) ;;
     cancelled) exit 1 ;;
     failed) exit 42 ;;
     *) exit 98 ;;
 esac
 STUB
-chmod +x "$WORK/bin/lsof" "$WORK/bin/ps" "$WORK/bin/ipconfig" "$WORK/bin/osascript"
+chmod +x "$WORK/bin/mysql.server" "$WORK/bin/lsof" "$WORK/bin/ps" "$WORK/bin/ipconfig" "$WORK/bin/osascript"
 export PATH="$WORK/bin:$PATH"
 run() { JIG_MYSQLADMIN="$WORK/bin/mysqladmin" JIG_MYSQL_PLIST="$WORK/plist" JIG_MYSQL_WAIT=1 DRY_RUN=1 \
         JIG_CONTROL_ACTION="$1" bash "$WORK/pkg/scripts/jig-control.command" < /dev/null 2>&1; }
@@ -74,7 +81,7 @@ check; case "$out" in *START-SYSTEM-RAN*) fail "start: system started without My
 touch "$WORK/mysql-up"
 out="$(run stop)"
 check; case "$out" in *STOP-SYSTEM-RAN*) ;; *) fail "stop: stop-system not run: $out" ;; esac
-check; case "$out" in *"[dry-run] /Applications/XAMPP/xamppfiles/xampp stopmysql"*) ;; *) fail "stop: MySQL not stopped: $out" ;; esac
+check; case "$out" in *"[dry-run] USER=root /Applications/XAMPP/xamppfiles/bin/mysql.server stop --user=root"*) ;; *) fail "stop: MySQL not stopped: $out" ;; esac
 
 # Status: names both parts and the port from application.properties.
 out="$(run status)"
@@ -112,13 +119,13 @@ scenario="XAMPP exits zero but MySQL stays alive (missing PID)"
 reset_stop alive
 run_stop
 result 1 'MySQL is still running after 1 seconds.' no
-check; [ "$(cat "$WORK/events")" = "$(printf 'stop-system\nadmin')" ] || fail "$scenario: wrong stop order"
+check; [ "$(cat "$WORK/events")" = "$(printf 'stop-system\nadmin')" ] || fail "$scenario: wrong stop order when MySQL remains alive"
 
 scenario="normal stop"
 reset_stop stopped
 run_stop
 result 0 '已停止。Stopped.' yes
-check; [ "$(cat "$WORK/events")" = "$(printf 'stop-system\nadmin')" ] || fail "$scenario: wrong stop order"
+check; [ "$(cat "$WORK/events")" = "$(printf 'stop-system\nadmin\nmysql-server')" ] || fail "$scenario: wrong stop order or mysql.server arguments"
 
 for mode in cancelled failed; do
     scenario="admin $mode"

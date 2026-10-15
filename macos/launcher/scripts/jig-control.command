@@ -103,7 +103,7 @@ Cannot verify MySQL status: mysqladmin is unavailable. Check the XAMPP installat
     fi
     if mysql_up; then
         echo "Stopping MySQL... 正在停止 MySQL..."
-        if ! admin "/Applications/XAMPP/xamppfiles/xampp stopmysql"; then
+        if ! admin "USER=root /Applications/XAMPP/xamppfiles/bin/mysql.server stop --user=root"; then
             say "未完全停止：MySQL 停止指令未完成或已取消。請再查看狀態，或聯絡 Admin。
 Not fully stopped: the MySQL stop command failed or was cancelled. Check Status or contact the Admin.
 $(status_text)"
