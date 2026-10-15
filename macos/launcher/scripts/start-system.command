@@ -90,7 +90,7 @@ fi
 if ! jig_db_load "$PACKAGE_DIR"; then
     echo
     echo "[ERROR] MySQL client not found."
-    echo "Please install XAMPP for macOS first, then start MySQL in the XAMPP control panel."
+    echo "Please install XAMPP for macOS first, then run scripts/setup-mysql-autostart.command."
     read -r -p "Press Enter to close..."
     exit 1
 fi
@@ -98,7 +98,7 @@ fi
 if ! jig_db_ping; then
     echo
     echo "[ERROR] MySQL is not responding."
-    echo "Please open the XAMPP control panel and start MySQL."
+    echo "Start it with scripts/jig-control.command -> Start (or run scripts/setup-mysql-autostart.command once)."
     echo "Then run this launcher again."
     read -r -p "Press Enter to close..."
     exit 1

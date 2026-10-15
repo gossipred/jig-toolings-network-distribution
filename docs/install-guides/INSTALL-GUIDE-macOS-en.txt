@@ -125,6 +125,16 @@ Keep app/application.properties when you move the system to another folder.
   System Settings.
 
 ================================================================
+[DAILY USE: START, STOP, STATUS]
+================================================================
+Double-click scripts/jig-control.command (Windows: jig-control.bat)
+and choose Start, Stop or Status:
+- Start: starts MySQL, then the Jig system
+- Stop: stops the Jig system, then MySQL
+- Status: shows whether MySQL and the Jig system are running, and the address
+Starting or stopping MySQL asks for the computer's administrator password.
+
+================================================================
 [OTHER COMPUTERS IN THE COMPANY]
 ================================================================
 1. On the server run scripts/show-network-address.command to see its LAN IP

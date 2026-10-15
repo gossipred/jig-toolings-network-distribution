@@ -69,7 +69,7 @@ if "%DB_CHECK%"=="2" (
 if not "%DB_CHECK%"=="0" (
     echo.
     echo [ERROR] MySQL is not responding.
-    echo Please open XAMPP Control Panel and click Start on MySQL.
+    echo Start it with scripts\jig-control.bat -^> 1 ^(or click Start on MySQL in XAMPP Control Panel^).
     echo Then run this launcher again.
     pause
     exit /b 1
