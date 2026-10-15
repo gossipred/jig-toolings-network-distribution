@@ -152,6 +152,12 @@ if [ -n "$BAD_NAMES" ]; then
 fi
 
 # ── Step 4: Create ZIP ────────────────────────────────────────────────────────
+DUPES="$(find "$PACKAGE_DIR" -name '* 2*' | head -5)"
+if [ -n "$DUPES" ]; then
+    echo "[ERROR] Duplicate files (iCloud sync conflict copies) in the package:"
+    echo "$DUPES"
+    exit 1
+fi
 echo "[4/5] Creating ZIP: $ZIP_NAME"
 mkdir -p "$DIST_DIR"
 rm -f "$OUTPUT"

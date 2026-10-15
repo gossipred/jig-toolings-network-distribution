@@ -49,6 +49,11 @@ for script in macos/installer/release-macos.sh windows/installer/release-windows
         echo "FAIL: $script must default to a local build"
         failed=$((failed + 1))
     fi
+    count=$((count + 1))
+    if ! grep -qF 'Duplicate files (iCloud sync conflict copies)' "$DIST/$script"; then
+        echo "FAIL: $script must reject iCloud duplicate files"
+        failed=$((failed + 1))
+    fi
 done
 echo "$count template checks, $failed failed"
 [ "$failed" -eq 0 ]
