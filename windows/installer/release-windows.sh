@@ -109,18 +109,16 @@ echo ""
 # XAMPP's VMware InstallBuilder installer failed (exit 1) on a real Windows 11 test.
 # XAMPP-installer.exe is now uploaded as its own GitHub Release asset (Step 5b) and
 # customers install it first, then run JigToolingsSetup (which checks C:\xampp).
-echo "[3.5] Copying runtime/ from mysql-windows (XAMPP no longer bundled)..."
+# runtime/ is produced by CORE scripts/build-runtimes.sh.
+echo "[3.5] Checking bundled runtime/ (XAMPP no longer bundled)..."
 
 XAMPP_SRC="$MYSQL_PACKAGE_DIR/XAMPP-installer.exe"
-RUNTIME_SRC="$MYSQL_PACKAGE_DIR/runtime"
 rm -f "$PACKAGE_DIR/XAMPP-installer.exe"
 
-if [ -d "$RUNTIME_SRC" ]; then
-    rm -rf "$PACKAGE_DIR/runtime"
-    cp -R "$RUNTIME_SRC" "$PACKAGE_DIR/runtime"
-    echo "      runtime/ copied ($(du -sh "$RUNTIME_SRC" | cut -f1))"
-else
-    echo "      [WARN] runtime/ not found at $RUNTIME_SRC — skipped"
+if [ ! -f "$PACKAGE_DIR/runtime/bin/java.exe" ]; then
+    echo "[ERROR] Bundled runtime not found: $PACKAGE_DIR/runtime/bin/java.exe"
+    echo "        Build it with scripts/build-runtimes.sh in the core repo."
+    exit 1
 fi
 echo ""
 
@@ -268,7 +266,9 @@ echo ""
 
 # ── Step 5b: Upload ZIP, EXE and standalone XAMPP installer to GitHub Release ─
 # Release v${VERSION} must already exist (gh release create) — upload uses --clobber.
-if gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
+if [ "${JIG_UPLOAD:-0}" != 1 ]; then
+    echo "[5b] Local build only — nothing uploaded (set JIG_UPLOAD=1 to upload to GitHub)."
+elif gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
     echo "[5b] Uploading assets to GitHub Release v${VERSION}..."
     UPLOADS=("$OUTPUT")
     [ -n "$EXE_SHA256" ] && [ -f "$EXE_OUTPUT" ] && UPLOADS+=("$EXE_OUTPUT")

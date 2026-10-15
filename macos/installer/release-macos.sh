@@ -214,7 +214,9 @@ echo ""
 # its own Release asset. update-download.sh MUST stay in the zip: the updater
 # calls it (an old --exclude "*.sh" silently dropped it, breaking Mac updates).
 XAMPP_DMG="$PACKAGE_DIR/XAMPP-installer.dmg"
-if gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
+if [ "${JIG_UPLOAD:-0}" != 1 ]; then
+    echo "[5] Local build only — nothing uploaded (set JIG_UPLOAD=1 to upload to GitHub)."
+elif gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
     UPLOADS=("$OUTPUT")
     [ -f "$XAMPP_DMG" ] && UPLOADS+=("$XAMPP_DMG")
     gh release upload "v${VERSION}" "${UPLOADS[@]}" \

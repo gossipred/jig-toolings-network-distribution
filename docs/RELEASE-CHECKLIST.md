@@ -41,7 +41,7 @@ So, for each change:
 ## Publishing order
 
 1. push code (without `shared/latest.json`)
-2. `gh release create` with all assets
+2. `gh release create` with all assets. Release scripts upload only when `JIG_UPLOAD=1`.
 3. download and compare sha256 with `latest.json`
 4. push `shared/latest.json` **and** `shared/latest.json.sig` last, in the same commit (otherwise customers see the update before the files exist)
 5. GitHub caches raw files for about 5 minutes: wait 5 minutes, check that `curl -s <raw latest.json URL>.sig` is the new signature, then announce the release. Until then v2.x systems simply report "up to date".
