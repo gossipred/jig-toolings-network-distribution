@@ -2,7 +2,7 @@
 # Checks the bundled Java runtimes: Eclipse Temurin 21, no Oracle license,
 # every module the app needs, no duplicate " 2" files.
 set -u
-CORE="${JIG_CORE_REPO:-$HOME/Documents/Codex/jig-and-toolings-management-system}"
+CORE="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 MODULES="java.base java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.net.http java.rmi java.security.jgss java.transaction.xa java.sql java.sql.rowset jdk.charsets jdk.crypto.ec jdk.crypto.cryptoki jdk.localedata jdk.naming.dns jdk.unsupported jdk.zipfs"
 checks=0; failed=0
 check() { checks=$((checks + 1)); }

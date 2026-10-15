@@ -16,7 +16,7 @@
 set -euo pipefail
 
 DIST_REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-CORE_REPO="${1:-/Users/gossipredm4/Documents/Codex/jig-and-toolings-management-system}"
+CORE_REPO="${1:-/Users/gossipredm4/Developer/jig-and-toolings-management-system}"
 PACKAGE_DIR="$CORE_REPO/customer-package/windows-network-app"
 MYSQL_PACKAGE_DIR="$CORE_REPO/customer-package/mysql-windows"
 LAUNCHER_DIR="$DIST_REPO/windows/launcher"

@@ -2,7 +2,7 @@
 # set-app-icon.sh gives START-JIG-NETWORK-APP.command the network app icon. bash 3.2.
 set -u
 DIST="$(cd "$(dirname "$0")/../.." && pwd)"
-CORE="${JIG_CORE_REPO:-$HOME/Documents/Codex/jig-and-toolings-management-system}"
+CORE="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 ICNS="$CORE/customer-package/mac-network-app/app/jig-network.icns"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

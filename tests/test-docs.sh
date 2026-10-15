@@ -3,7 +3,7 @@
 #   bash tests/test-docs.sh
 set -u
 DIST="$(cd "$(dirname "$0")/.." && pwd)"
-CORE="${JIG_CORE_REPO:-$HOME/Documents/Codex/jig-and-toolings-management-system}"
+CORE="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 GUIDES="$DIST/docs/install-guides"
 EMAIL="aurastudio.studio.service@gmail.com"
 OLD_EMAIL_USER="gossipred""5598"   # split so this file does not match its own search

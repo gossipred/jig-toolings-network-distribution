@@ -29,7 +29,7 @@ check_release_template \"\$1\"" check "$props" > "$WORK/output" 2>&1 || rc=$?
     done
 done
 # Packaging contracts: inspect text only; never execute the packaging scripts.
-CORE="${JIG_CORE_REPO:-$HOME/Documents/Codex/jig-and-toolings-management-system}"
+CORE="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 failed=0
 count=$((count + 1))
 if grep -qF 'RUNTIME_SRC=' "$DIST/windows/installer/release-windows.sh"; then

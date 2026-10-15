@@ -1,7 +1,7 @@
 # Minimal helpers for the launcher-script tests. bash 3.2 compatible.
 # Source it from a test file:  . "$(dirname "$0")/../lib.sh"
 DIST_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CORE_REPO="${JIG_CORE_REPO:-$HOME/Documents/Codex/jig-and-toolings-management-system}"
+CORE_REPO="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 CORE_DB="$CORE_REPO/customer-package/mac-network-app/database"
 MAC_SCRIPTS="$DIST_REPO/macos/launcher/scripts"
 WIN_SCRIPTS="$DIST_REPO/windows/launcher/scripts"
