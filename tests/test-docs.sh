@@ -72,5 +72,34 @@ check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-Windows*.txt "$PACKAGE_DI
 check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-macOS*.txt "$PACKAGE_DIR/"' "$DIST/macos/installer/release-macos.sh" ||
     fail "release-macos.sh does not copy the guides"
 
+# 7. v2.0.0 version everywhere the release reads it.
+for f in "$CORE/src/main/resources/application.properties" \
+         "$CORE/customer-package/mac-network-app/app/application.properties" \
+         "$CORE/customer-package/windows-network-app/app/application.properties" \
+         "$CORE/customer-package/mysql-windows/app/application.properties"; do
+    check; grep -qx 'app.version=2.0.0' <(tr -d '\r' < "$f") || fail "app.version is not 2.0.0: $f"
+done
+
+# 8. Every batch file in CORE customer-package is ASCII (old packages too).
+check
+bad="$(find "$CORE/customer-package" -name '*.bat' -not -path '*/runtime/*' -print0 |
+    xargs -0 perl -ne 'if (/[^\x09\x0a\x0d\x20-\x7e]/) { print "$ARGV:$.\n"; } close ARGV if eof')"
+[ -z "$bad" ] || fail "non-ASCII in CORE batch files: $bad"
+
+# 9. Customer README files carry no internal notes.
+check
+notes="$(grep -l 'Notes For JJ' "$CORE"/customer-package/*/README-FIRST.md || true)"
+[ -z "$notes" ] || fail "internal notes in: $notes"
+
+# 10. Installer notes name the real shortcut.
+check
+grep -q 'desktop shortcut starting with "Jig Toolings"' "$DIST/windows/installer/installer-notes-en.txt" ||
+    fail "installer-notes-en.txt shortcut wording"
+
+# 11. zh-TW guides use the on-screen HTTPS section title.
+for f in "$GUIDES"/INSTALL-GUIDE-*-zh-TW.txt; do
+    check; grep -q '系統設定 → HTTPS 加密連線 → 開啟 HTTPS' "$f" || fail "HTTPS path wording: $(basename "$f")"
+done
+
 echo "$RUN checks, $FAILED failed"
 [ "$FAILED" -eq 0 ]

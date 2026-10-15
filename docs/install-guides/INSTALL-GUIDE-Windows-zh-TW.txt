@@ -112,7 +112,7 @@ XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.ht
   每個使用者的選擇會被記住。
 • 時區：系統設定（System Settings）→ 時區（Time Zone），預設是這台電腦的時區；
   修改後要重新啟動系統。
-• HTTPS（可選）：系統設定 → HTTPS → 開啟 HTTPS，重新啟動系統，
+• HTTPS（可選）：系統設定 → HTTPS 加密連線 → 開啟 HTTPS，重新啟動系統，
   以系統管理員身分執行 scripts\open-firewall.bat，其他電腦改用
   https://伺服器IP:8443 。第一次瀏覽器會警告（系統自己產生憑證），
   連線仍然有加密。詳見系統設定裡的「HTTPS 說明」按鈕。

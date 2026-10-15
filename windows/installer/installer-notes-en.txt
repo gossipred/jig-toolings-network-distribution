@@ -29,7 +29,7 @@ Step 2: Run this setup wizard
 The wizard automatically:
   - sets MySQL to start with Windows
   - creates the database and its own database account (jig_app)
-  - creates the desktop shortcut "Jig Toolings"
+  - creates a desktop shortcut starting with "Jig Toolings"
 
 ----------------------------------------
 Step 3: Start and sign in

@@ -119,10 +119,10 @@ Keep app/application.properties when you move the system to another folder.
 - Time Zone: System Settings -> Time Zone (default: this computer's time
   zone). Restart the system after changing it.
 - HTTPS (optional): System Settings -> HTTPS -> Turn on HTTPS, restart the
-  system, then other
-  computers open https://(server IP):8443 . Browsers warn the first time
-  because the system makes its own certificate; the connection is still
-  encrypted. Details: the "HTTPS guide" button in System Settings.
+  system, then other computers open https://(server IP):8443 . Browsers
+  warn the first time because the system makes its own certificate; the
+  connection is still encrypted. Details: the "HTTPS guide" button in
+  System Settings.
 
 ================================================================
 [OTHER COMPUTERS IN THE COMPANY]
