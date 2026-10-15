@@ -15,4 +15,5 @@ Text and packaging checks (no database needed):
     bash tests/test-docs.sh
     bash tests/test-installer.sh   # needs makensis (brew install makensis)
     bash tests/macos/test-app-icon.sh
+    bash tests/macos/test-mysql-autostart.sh
     bash tests/test-runtimes.sh    # after scripts/build-runtimes.sh in the core repo

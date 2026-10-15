@@ -76,6 +76,7 @@ cat > "$TMP/$LABEL.plist" <<EOF
     <key>ProgramArguments</key>
     <array><string>/bin/bash</string><string>$HELPER</string></array>
     <key>RunAtLoad</key><true/>
+    <key>AbandonProcessGroup</key><true/>
     <key>StandardOutPath</key><string>$LOG</string>
     <key>StandardErrorPath</key><string>$LOG</string>
 </dict>
