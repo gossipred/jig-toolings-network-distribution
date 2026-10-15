@@ -101,5 +101,31 @@ for f in "$GUIDES"/INSTALL-GUIDE-*-zh-TW.txt; do
     check; grep -q '系統設定 → HTTPS 加密連線 → 開啟 HTTPS' "$f" || fail "HTTPS path wording: $(basename "$f")"
 done
 
+# 12. Manuals: CORE copies match DIST, and both carry the v2.0 sections.
+for f in "$DIST"/docs/manuals/*.docx; do
+    check; cmp -s "$f" "$CORE/docs/manuals/$(basename "$f")" || fail "manual copy differs: $(basename "$f")"
+    for phrase in '第一次登入時，系統一定會先帶你到「修改密碼」頁' 'On the first sign-in the system always opens the Change Password page first' \
+                  '連續輸入錯誤密碼 5 次，帳號會鎖定 15 分鐘' 'The Language menu is on the sign-in page'; do
+        check; python3 - "$f" "$phrase" <<'EOF' || fail "$(basename "$f") lacks: $phrase"
+import sys, docx
+text = "\n".join(p.text for p in docx.Document(sys.argv[1]).paragraphs)
+sys.exit(0 if sys.argv[2] in text else 1)
+EOF
+    done
+done
+admin="$DIST/docs/manuals/治具及模具管理系統＿管理人員說明書（中英）.docx"
+for phrase in 'Admin 按該帳號的「解鎖」即可立即解除' 'System Settings → Time Zone' 'https://（伺服器 IP）:8443' 'From v2.0 the update list is digitally signed'; do
+    check; python3 - "$admin" "$phrase" <<'EOF' || fail "admin manual lacks: $phrase"
+import sys, docx
+text = "\n".join(p.text for p in docx.Document(sys.argv[1]).paragraphs)
+sys.exit(0 if sys.argv[2] in text else 1)
+EOF
+done
+for f in "$CORE"/customer-package/{mac,windows}-network-app/documents/admin-operation-guide.md \
+         "$CORE"/customer-package/{mac,windows}-network-app/documents/user-quick-guide.md \
+         "$CORE"/customer-package/{mac,windows}-network-app/USER-GUIDE-zh-TW.txt; do
+    check; grep -q '連續輸入錯誤密碼 5 次，帳號會鎖定 15 分鐘' "$f" || fail "v2.0 account text missing: $f"
+done
+
 echo "$RUN checks, $FAILED failed"
 [ "$FAILED" -eq 0 ]
