@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Checks the bundled Java runtimes: Eclipse Temurin 21, no Oracle license,
-# every module the app needs, no duplicate " 2" files.
+# every module the app needs, no numbered iCloud conflict copies.
 set -u
 CORE="${JIG_CORE_REPO:-$HOME/Developer/jig-and-toolings-management-system}"
 MODULES="java.base java.datatransfer java.xml java.prefs java.desktop java.instrument java.logging java.management java.security.sasl java.naming java.net.http java.rmi java.security.jgss java.transaction.xa java.sql java.sql.rowset jdk.charsets jdk.crypto.ec jdk.crypto.cryptoki jdk.localedata jdk.naming.dns jdk.unsupported jdk.zipfs"
@@ -20,7 +20,7 @@ for platform in mac-network-app windows-network-app; do
     for m in $want; do
         check; case "$have" in *" $m "*) ;; *) fail "$platform: module $m missing" ;; esac
     done
-    check; dup="$(find "$rt" -name '* 2*' 2>/dev/null | head -3)"; [ -z "$dup" ] || fail "$platform: duplicate files: $dup"
+    check; dup="$(find "$rt" -name '* [0-9]*' 2>/dev/null | head -3)"; [ -z "$dup" ] || fail "$platform: duplicate files: $dup"
 done
 
 check; file "$CORE/customer-package/mac-network-app/runtime/bin/java" | grep -q 'arm64' || fail "mac java is not arm64"

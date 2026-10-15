@@ -55,5 +55,12 @@ for script in macos/installer/release-macos.sh windows/installer/release-windows
         failed=$((failed + 1))
     fi
 done
+for script in macos/installer/release-macos.sh windows/installer/release-windows.sh; do
+    count=$((count + 1))
+    if ! grep -qF -- "-name '* [0-9]*'" "$DIST/$script"; then
+        echo "FAIL: $script must reject every numbered iCloud conflict copy"
+        failed=$((failed + 1))
+    fi
+done
 echo "$count template checks, $failed failed"
 [ "$failed" -eq 0 ]
