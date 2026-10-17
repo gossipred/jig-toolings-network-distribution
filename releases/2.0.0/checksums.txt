@@ -1,0 +1,4 @@
+6a937675f6a6ece0feb4cd4c9bbca29c20cdade6c08cf1af0c1751094745deeb  Jig-v2.0.0-Windows-Installation-and-Upgrade-Guide.pdf
+66adf316391e0fef7cd2775309b9bf64e3ab6f88a7c7e1edcfe0311b87c8ea40  JigToolingsSetup-2.0.0.exe
+3e92e05c0db38201e35d98a611eab08955d3fb0ff47f9f34c6a8d9afc1ac5380  jig-toolings-network-macos-2.0.0.zip
+85cc8edac320a1e1c052341a34b7eaf4462df2bc662b2a678f0752fe2fc85b62  jig-toolings-network-windows-2.0.0.zip
