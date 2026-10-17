@@ -27,7 +27,8 @@ Back up first. Existing supported installations can use **Check for Updates** or
 
 ## Known issues and support
 
-- An intermittent first-login HTTP 403 has been reported; its cause is not yet confirmed. If it occurs, copy logs and a screenshot before restarting. A v2.0.1 improvement will follow after diagnosis.
+- **First-login HTTP 403 workaround:** save logs and a screenshot first. Open `jig-control`, select **Stop**, then **Start**. Wait until the system reports **Ready**, reopen `http://localhost:8080/login` (or your configured server address), and sign in again. If 403 persists, send the saved logs to support. This is a temporary workaround; the cause is unconfirmed and further improvement is planned for v2.0.1.
+- **首次登入 403 暫時對策：**先保存日誌與截圖，再開啟 `jig-control` 選 **Stop → Start**，等系統顯示 **Ready** 後，重新開啟登入頁並登入。若仍出現 403，請將日誌寄給售後服務。原因尚待確認，後續於 v2.0.1 改善。
 - Windows Stop may show a repeated process-not-found warning after stopping the application; use Status to confirm the actual state.
 - Startup logs can be overwritten on restart. Preserve `C:\JigSystem\logs\jig-system.log` and `C:\JigSystem\logs\last-update.txt` before restarting.
 
