@@ -72,12 +72,12 @@ check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-Windows*.txt "$PACKAGE_DI
 check; grep -qF 'cp "$DIST_REPO/docs/install-guides/"*-macOS*.txt "$PACKAGE_DIR/"' "$DIST/macos/installer/release-macos.sh" ||
     fail "release-macos.sh does not copy the guides"
 
-# 7. v2.0.0 version everywhere the release reads it.
+# 7. v2.0.1 version everywhere the release reads it.
 for f in "$CORE/src/main/resources/application.properties" \
          "$CORE/customer-package/mac-network-app/app/application.properties" \
          "$CORE/customer-package/windows-network-app/app/application.properties" \
          "$CORE/customer-package/mysql-windows/app/application.properties"; do
-    check; grep -qx 'app.version=2.0.0' <(tr -d '\r' < "$f") || fail "app.version is not 2.0.0: $f"
+    check; grep -qx 'app.version=2.0.1' <(tr -d '\r' < "$f") || fail "app.version is not 2.0.1: $f"
 done
 
 # 8. Every batch file in CORE customer-package is ASCII (old packages too).
