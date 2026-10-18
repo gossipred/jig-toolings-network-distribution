@@ -147,9 +147,11 @@ echo
 
 # Remember the port in use, so stop-system still finds the system after the port setting changes.
 echo "$JIG_PORT" > "$LOG_DIR/running-port.txt"
+# Append, never overwrite: earlier runs are the evidence when something goes wrong (v2.0.1).
+echo "===== Jig start $(date '+%Y-%m-%d %H:%M:%S') =====" >> "$LOG_DIR/jig-system.log"
 cd "$APP_DIR"
 nohup "$JAVA_EXE" -jar jig-management-system.jar --spring.config.location=file:application.properties \
-    > "$LOG_DIR/jig-system.log" 2>&1 &
+    >> "$LOG_DIR/jig-system.log" 2>&1 &
 
 echo "Waiting for the web server to become ready..."
 echo "(The first start can take 1-2 minutes on slower computers.)"
