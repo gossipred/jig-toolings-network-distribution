@@ -122,7 +122,10 @@ echo.
 rem Remember the port in use, so stop-system still finds the system after the port setting changes.
 >"%LOG_DIR%\running-port.txt" echo %JIG_PORT%
 rem Append, never overwrite: earlier runs are the evidence when something goes wrong (v2.0.1).
->>"%LOG_DIR%\jig-system.log" echo ===== Jig start %date% %time% =====
+rem The built-in date variable follows the Windows locale (zh-TW adds a Big5 weekday); use a fixed format.
+set "JIG_NOW=unknown time"
+for /f "delims=" %%t in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set "JIG_NOW=%%t"
+>>"%LOG_DIR%\jig-system.log" echo ===== Jig start %JIG_NOW% =====
 cd /d "%APP_DIR%"
 start "Jig Toolings System" /min cmd /c ""%JAVA_EXE%" -jar jig-management-system.jar --spring.config.location=file:application.properties >> "%LOG_DIR%\jig-system.log" 2>&1"
 

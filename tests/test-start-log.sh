@@ -24,8 +24,14 @@ check
 
 # 2. Each start writes a dated separator first, so runs can be told apart.
 check
-grep -qF '>>"%LOG_DIR%\jig-system.log" echo ===== Jig start %date% %time% =====' "$BAT" ||
+grep -qF '>>"%LOG_DIR%\jig-system.log" echo ===== Jig start %JIG_NOW% =====' "$BAT" ||
     fail "no start separator line"
+# %date% follows the Windows locale (zh-TW adds a weekday in Big5), so the log line is not ASCII.
+check
+grep -qF "for /f \"delims=\" %%t in ('powershell -NoProfile -Command \"Get-Date -Format 'yyyy-MM-dd HH:mm:ss'\"') do set \"JIG_NOW=%%t\"" "$BAT" ||
+    fail "separator time is not taken from a fixed yyyy-MM-dd HH:mm:ss format"
+check
+! grep -qF '%date%' "$BAT" || fail "start-system.bat still uses the locale-dependent %date%"
 
 # 3. cmd.exe needs ASCII with CRLF line endings.
 check
