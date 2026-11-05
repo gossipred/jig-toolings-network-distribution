@@ -1,6 +1,6 @@
 ﻿================================================================
   治具及模具管理系統（Jig & Toolings Management System）
-  Windows 網路版安裝說明  v2.0.1
+  Windows 網路版安裝說明  v2.0.2
   ※ 請先讀完本說明再開始安裝，可避免大部分的安裝錯誤
   English version: INSTALL-GUIDE-Windows-en.txt
 ================================================================
@@ -165,3 +165,7 @@ v1.3.1 起支援線上更新：有新版本時，在伺服器點兩下
 【問題聯絡】
 Aura Studio  |  aurastudio.studio.service@gmail.com
 ================================================================
+
+
+Version 2.0.2 upgrade: MariaDB Connector/J replaces the MySQL driver. Keep your existing app/application.properties and jdbc:mysql URL unchanged. Do not reinstall XAMPP for an upgrade.
+升級 v2.0.2：改用 MariaDB Connector/J；沿用原 app/application.properties 與 jdbc:mysql 網址，不需修改舊設定或重裝 XAMPP。

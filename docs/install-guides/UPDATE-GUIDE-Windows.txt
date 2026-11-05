@@ -207,3 +207,7 @@ online. The release notes will say so and give manual steps.
 
 Contact: aurastudio.studio.service@gmail.com
 ================================================================
+
+
+Version 2.0.2 upgrade: MariaDB Connector/J replaces the MySQL driver. Keep your existing app/application.properties and jdbc:mysql URL unchanged. Do not reinstall XAMPP for an upgrade.
+升級 v2.0.2：改用 MariaDB Connector/J；沿用原 app/application.properties 與 jdbc:mysql 網址，不需修改舊設定或重裝 XAMPP。
