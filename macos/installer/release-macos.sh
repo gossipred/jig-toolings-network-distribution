@@ -24,6 +24,9 @@ CORE_REPO="${1:-/Users/gossipredm4/Developer/jig-and-toolings-management-system}
 PACKAGE_DIR="$CORE_REPO/customer-package/mac-network-app"
 LAUNCHER_DIR="$DIST_REPO/macos/launcher"
 
+. "$DIST_REPO/tools/check-xampp-installers.sh"
+check_no_xampp_installer "$PACKAGE_DIR"
+
 # Refuse to ship customer credentials in the package template.
 check_release_template() {
     if ! awk '
@@ -91,6 +94,7 @@ echo ""
 # ── Step 2: Assemble package directory ───────────────────────────────────────
 echo "[2/4] Assembling package directory..."
 bash "$PACKAGE_DIR/scripts/build-mac-network-app-package.sh"
+check_no_xampp_installer "$PACKAGE_DIR"
 echo "[2/4] Assembly OK."
 echo ""
 
@@ -135,6 +139,7 @@ if [ -n "$BAD_NAMES" ]; then
 fi
 
 # ── Step 3: Create ZIP ────────────────────────────────────────────────────────
+check_no_xampp_installer "$PACKAGE_DIR"
 DUPES="$(find "$PACKAGE_DIR" -name '* [0-9]*' | head -5)"
 if [ -n "$DUPES" ]; then
     echo "[ERROR] Duplicate files (iCloud sync conflict copies) in the package:"
@@ -150,7 +155,6 @@ zip -r "$OUTPUT" . \
     --exclude "*/.DS_Store" \
     --exclude ".DS_Store" \
     --exclude "*/build-*.sh" \
-    --exclude "XAMPP-installer.dmg" \
     --exclude ".gitignore" \
     --exclude "backups/*" \
     --exclude "logs/*" \
@@ -215,21 +219,17 @@ bash "$DIST_REPO/tools/sign-latest-json.sh" "$DIST_REPO/shared/latest.json" "$CO
 echo "[4/4] Manifests updated."
 echo ""
 
-# ── Step 5: Upload ZIP + standalone XAMPP dmg to the GitHub Release ──────────
-# XAMPP is no longer inside the zip (2026-09-27, same as Windows) — it ships as
-# its own Release asset. update-download.sh MUST stay in the zip: the updater
-# calls it (an old --exclude "*.sh" silently dropped it, breaking Mac updates).
-XAMPP_DMG="$PACKAGE_DIR/XAMPP-installer.dmg"
+# ── Step 5: Upload only the Jig ZIP to the GitHub Release ────────────────────
+# update-download.sh must stay in the ZIP: the updater calls it.
 if [ "${JIG_UPLOAD:-0}" != 1 ]; then
     echo "[5] Local build only — nothing uploaded (set JIG_UPLOAD=1 to upload to GitHub)."
 elif gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distribution >/dev/null 2>&1; then
     UPLOADS=("$OUTPUT")
-    [ -f "$XAMPP_DMG" ] && UPLOADS+=("$XAMPP_DMG")
     gh release upload "v${VERSION}" "${UPLOADS[@]}" \
         --repo gossipred/jig-toolings-network-distribution --clobber
     echo "[5] Uploaded: ${#UPLOADS[@]} file(s)."
 else
-    echo "[5] Release v${VERSION} not found — create it, then upload $OUTPUT and $XAMPP_DMG"
+    echo "[5] Release v${VERSION} not found — create it, then upload $OUTPUT"
 fi
 echo ""
 

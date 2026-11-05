@@ -13,7 +13,10 @@ backup is made first in the backups folder. (No need to reinstall XAMPP.)
 ----------------------------------------
 Step 1: Install XAMPP (MySQL database, once)
 ----------------------------------------
-1. Run XAMPP-installer.exe (on the same download page as this setup)
+1. Download the tested XAMPP 8.2.12-0 from Apache Friends, then run xampp-windows-x64-8.2.12-0-VS16-installer.exe:
+   https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+   SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+   If unavailable, email aurastudio.studio.service@gmail.com for an alternative.
 2. If a "UAC / Program Files" warning appears, click OK
    (you do NOT need to turn off UAC)
 3. "Select Components": only MySQL is needed. You may untick Tomcat,

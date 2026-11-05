@@ -10,6 +10,15 @@
   中文
 ################################################################
 
+【XAMPP 下載（僅重新安裝時需要）】
+線上更新不需要重裝 XAMPP。我們的下載頁只提供 Jig 自己的檔案。
+需重新安裝時，請下載 XAMPP 8.2.12-0（我們測過的版本）：
+https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+檔名：xampp-windows-x64-8.2.12-0-VS16-installer.exe
+SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+若下載頁已沒有這個版本，請來信 aurastudio.studio.service@gmail.com，
+我們提供替代方式；請勿自行改用新版。
+
 【什麼是線上更新？】
 有新版本時，在伺服器電腦上點兩下一個檔案，系統就會自動：
   ① 備份資料庫、授權、上傳的附件、程式與設定
@@ -95,6 +104,15 @@ v1.3.0 以前的更新程式只會換主程式，請先升級一次，之後就�
 ################################################################
   ENGLISH
 ################################################################
+
+[XAMPP DOWNLOAD (ONLY WHEN REINSTALLING)]
+Online updates do not require reinstalling XAMPP. Our download page lists Jig files only.
+If reinstalling, please download XAMPP 8.2.12-0 (tested by us):
+https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+File: xampp-windows-x64-8.2.12-0-VS16-installer.exe
+SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+If this version is no longer available, email aurastudio.studio.service@gmail.com
+for an alternative. Do not select a newer version.
 
 [WHAT IS AN ONLINE UPDATE?]
 When a new version is available, double-click one file on the server and

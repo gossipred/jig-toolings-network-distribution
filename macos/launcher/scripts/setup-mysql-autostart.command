@@ -29,7 +29,9 @@ echo
 
 if [ ! -x "$XAMPP" ]; then
     echo "[ERROR] XAMPP not found in /Applications/XAMPP. Please install XAMPP first."
-    echo "[錯誤] 找不到 XAMPP，請先安裝 XAMPP-installer.dmg。"
+    echo "[錯誤] 找不到 XAMPP，請先安裝官方 XAMPP 8.2.4-0。"
+    echo "https://sourceforge.net/projects/xampp/files/XAMPP%20Mac%20OS%20X/8.2.4/xampp-osx-8.2.4-0-installer.dmg/download"
+    echo "See INSTALL-GUIDE-macOS-en.txt for the SHA-256 and installation steps."
     pause_exit 1
 fi
 

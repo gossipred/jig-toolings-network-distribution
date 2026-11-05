@@ -8,12 +8,16 @@
 【下載區】
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
-需要下載的檔案：
-  1. XAMPP-installer.dmg（MySQL 資料庫）
-  2. jig-toolings-network-macos-x.x.x.zip（治具系統）
+我們的下載頁只提供 Jig 自己的檔案：
+  jig-toolings-network-macos-x.x.x.zip
 
-XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.html
-（建議用下載區的 XAMPP-installer.dmg，是我們測試過的版本）
+XAMPP 8.2.4-0 請另外到 Apache Friends 官方 SourceForge 下載：
+https://sourceforge.net/projects/xampp/files/XAMPP%20Mac%20OS%20X/8.2.4/xampp-osx-8.2.4-0-installer.dmg/download
+檔名：xampp-osx-8.2.4-0-installer.dmg
+SHA-256: eb9888f2e3b131ae9a5fbec063a6b642a7285e065a8e5f5e97c699b71e2d7ac5
+請下載這個版本（我們測過的）。
+若下載頁已沒有這個版本，請來信 aurastudio.studio.service@gmail.com，
+我們提供替代方式；請勿自行改用新版。
 
 安裝在「伺服器電腦」上（一台就好）。同公司其他電腦（Mac 或 Windows 都可以）
 不用安裝，用瀏覽器連過來即可使用。
@@ -29,7 +33,7 @@ macOS 開啟下載的檔案時可能跳出「無法打開，因為無法確認�
 ================================================================
 第 1 步：安裝 XAMPP（MySQL 資料庫，只需裝一次）
 ================================================================
-1. 點兩下「XAMPP-installer.dmg」，再點兩下裡面的安裝程式
+1. 點兩下「xampp-osx-8.2.4-0-installer.dmg」，再點兩下裡面的安裝程式
    （遇到「無法確認開發者」請照上方【安全性提示】處理）
 2. M 系列晶片（Apple Silicon）的 Mac 若詢問是否安裝 Rosetta → 選「安裝」
    （XAMPP 是 Intel 版程式，需要 Rosetta 才能執行）

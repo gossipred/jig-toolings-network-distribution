@@ -13,7 +13,10 @@
 ────────────────────────────────────────
 第 1 步：安裝 XAMPP（MySQL 資料庫，只需裝一次）
 ────────────────────────────────────────
-1. 執行 XAMPP-installer.exe（跟本安裝檔放在同一個下載頁）
+1. 請從 Apache Friends 官方下載 XAMPP 8.2.12-0（我們測過的版本），再執行 xampp-windows-x64-8.2.12-0-VS16-installer.exe：
+   https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+   SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+   若下載頁已沒有這個版本，請來信 aurastudio.studio.service@gmail.com，我們提供替代方式。
 2. 若跳出「UAC / Program Files」警告視窗，按「確定」即可，
    不需要關閉 UAC
 3. 「Select Components」頁：只需要 MySQL。

@@ -8,13 +8,17 @@
 [DOWNLOADS]
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
-Files you need (choose one method):
-  Method A (recommended): XAMPP-installer.exe + JigToolingsSetup-x.x.x.exe
-  Method B (manual):      XAMPP-installer.exe + jig-toolings-network-windows-x.x.x.zip
+Our download page lists Jig files only:
+  Method A (recommended): JigToolingsSetup-x.x.x.exe
+  Method B (manual): jig-toolings-network-windows-x.x.x.zip
 
-XAMPP is also available from the official website:
-https://www.apachefriends.org/download.html
-(We recommend XAMPP-installer.exe from our download page - the tested version.)
+Install XAMPP 8.2.12-0 separately from Apache Friends official SourceForge:
+https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+File: xampp-windows-x64-8.2.12-0-VS16-installer.exe
+SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+Please download this version (tested by us).
+If this version is no longer available, email aurastudio.studio.service@gmail.com
+for an alternative. Do not select a newer version.
 
 Install on the SERVER computer only (one machine). Other computers in the
 company do not need to install anything - they just use a web browser.
@@ -22,7 +26,7 @@ company do not need to install anything - they just use a web browser.
 ================================================================
 STEP 1: Install XAMPP (MySQL database - required for both methods, once)
 ================================================================
-1. Double-click "XAMPP-installer.exe"
+1. Double-click "xampp-windows-x64-8.2.12-0-VS16-installer.exe"
 2. A "UAC / Program Files" warning appears -> just click OK
    (a standard XAMPP notice; you do NOT need to disable UAC)
 3. "Select Components" page: only MySQL is needed.

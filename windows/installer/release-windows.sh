@@ -21,6 +21,9 @@ PACKAGE_DIR="$CORE_REPO/customer-package/windows-network-app"
 MYSQL_PACKAGE_DIR="$CORE_REPO/customer-package/mysql-windows"
 LAUNCHER_DIR="$DIST_REPO/windows/launcher"
 
+. "$DIST_REPO/tools/check-xampp-installers.sh"
+check_no_xampp_installer "$PACKAGE_DIR"
+
 # Refuse to ship customer credentials in the package template.
 check_release_template() {
     if ! awk '
@@ -107,13 +110,12 @@ echo ""
 # ── Step 3.5: Copy Java runtime ──────────────────────────────────────────────
 # Since 2026-09-27 XAMPP is NOT bundled in the zip/EXE: passing NSIS-style /S to
 # XAMPP's VMware InstallBuilder installer failed (exit 1) on a real Windows 11 test.
-# XAMPP-installer.exe is now uploaded as its own GitHub Release asset (Step 5b) and
-# customers install it first, then run JigToolingsSetup (which checks C:\xampp).
+# Customers download the tested XAMPP from Apache Friends first, then run
+# JigToolingsSetup (which checks C:\xampp). See the installation guide.
 # runtime/ is produced by CORE scripts/build-runtimes.sh.
 echo "[3.5] Checking bundled runtime/ (XAMPP no longer bundled)..."
 
-XAMPP_SRC="$MYSQL_PACKAGE_DIR/XAMPP-installer.exe"
-rm -f "$PACKAGE_DIR/XAMPP-installer.exe"
+check_no_xampp_installer "$PACKAGE_DIR"
 
 if [ ! -f "$PACKAGE_DIR/runtime/bin/java.exe" ]; then
     echo "[ERROR] Bundled runtime not found: $PACKAGE_DIR/runtime/bin/java.exe"
@@ -158,6 +160,7 @@ if [ -n "$DUPES" ]; then
     echo "$DUPES"
     exit 1
 fi
+check_no_xampp_installer "$PACKAGE_DIR"
 echo "[4/5] Creating ZIP: $ZIP_NAME"
 mkdir -p "$DIST_DIR"
 rm -f "$OUTPUT"
@@ -171,8 +174,7 @@ zip -r "$OUTPUT" . \
     --exclude "logs/*" \
     --exclude "license/*.lic" \
     --exclude "*/build-*.sh" \
-    --exclude "app/jig-toolings-management.jar" \
-    --exclude "XAMPP-installer.exe"
+    --exclude "app/jig-toolings-management.jar"
 
 SHA256=$(shasum -a 256 "$OUTPUT" | awk '{print $1}')
 ZIP_SIZE=$(du -sh "$OUTPUT" | cut -f1)
@@ -270,7 +272,7 @@ bash "$DIST_REPO/tools/sign-latest-json.sh" "$DIST_REPO/shared/latest.json" "$CO
 echo "[5/5] Manifests updated."
 echo ""
 
-# ── Step 5b: Upload ZIP, EXE and standalone XAMPP installer to GitHub Release ─
+# ── Step 5b: Upload only Jig ZIP and EXE to GitHub Release ───────────────────
 # Release v${VERSION} must already exist (gh release create) — upload uses --clobber.
 if [ "${JIG_UPLOAD:-0}" != 1 ]; then
     echo "[5b] Local build only — nothing uploaded (set JIG_UPLOAD=1 to upload to GitHub)."
@@ -278,7 +280,6 @@ elif gh release view "v${VERSION}" --repo gossipred/jig-toolings-network-distrib
     echo "[5b] Uploading assets to GitHub Release v${VERSION}..."
     UPLOADS=("$OUTPUT")
     [ -n "$EXE_SHA256" ] && [ -f "$EXE_OUTPUT" ] && UPLOADS+=("$EXE_OUTPUT")
-    [ -f "$XAMPP_SRC" ] && UPLOADS+=("$XAMPP_SRC#XAMPP-installer.exe")
     gh release upload "v${VERSION}" "${UPLOADS[@]}" \
         --repo gossipred/jig-toolings-network-distribution \
         --clobber
@@ -288,7 +289,6 @@ else
     echo "[5b] Release v${VERSION} not found — create it first, then re-run or upload manually:"
     echo "     $OUTPUT"
     [ -f "$EXE_OUTPUT" ] && echo "     $EXE_OUTPUT"
-    echo "     $XAMPP_SRC (as XAMPP-installer.exe)"
     echo ""
 fi
 
@@ -310,5 +310,5 @@ echo "   2. cd $DIST_REPO"
 echo "   3. git add shared/latest.json shared/latest.json.sig releases/$VERSION/"
 echo "   4. git commit -m \"Release v${VERSION} — Windows package\""
 echo "   5. git push origin main"
-echo "   6. Confirm GitHub Release v${VERSION} has: $ZIP_NAME, $EXE_NAME, XAMPP-installer.exe"
+echo "   6. Confirm GitHub Release v${VERSION} has only Jig assets: $ZIP_NAME, $EXE_NAME"
 echo "============================================================"

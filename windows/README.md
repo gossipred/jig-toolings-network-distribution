@@ -53,7 +53,7 @@ jig-toolings-network-windows-VERSION.zip
   操作說明.txt                   ← Chinese operation guide
   README-FIRST.md
   START-JIG-NETWORK-APP.bat
-  (XAMPP-installer.exe is NOT in the package since 2026-09-27 — separate Release asset)
+  (Install the tested XAMPP separately from Apache Friends; see INSTALL-GUIDE-Windows-en.txt)
   app/
     jig-management-system.jar
     application.properties

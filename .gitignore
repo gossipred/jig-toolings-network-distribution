@@ -15,7 +15,8 @@
 runtime/
 jre/
 xampp/
-XAMPP-installer.exe
+# Never commit or upload XAMPP installers; use Apache Friends official links.
+XAMPP-installer*
 
 # Customer runtime data
 license/*.lic

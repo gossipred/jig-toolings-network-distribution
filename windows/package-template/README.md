@@ -25,4 +25,4 @@ These paths must be preserved during updates.
 - XAMPP default root password is empty — no password needed during `install-database.bat`.
 - License is server-side only: LAN browser clients connect to the licensed server and do not need their own `.lic` files.
 - Do not store customer passwords in Git or public documents.
-- `runtime\` is gitignored (too large). `XAMPP-installer.exe` is no longer inside the zip/EXE (NSIS `/S` can't drive XAMPP's InstallBuilder installer — failed with exit 1 on real Windows 11, 2026-09-27); it ships as a separate GitHub Release asset.
+- `runtime\` is gitignored (too large). XAMPP is installed separately from Apache Friends: [xampp-windows-x64-8.2.12-0-VS16-installer.exe](https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download) (tested version 8.2.12-0). Do not bundle or upload XAMPP. See `docs/release-checklist-xampp.md`.

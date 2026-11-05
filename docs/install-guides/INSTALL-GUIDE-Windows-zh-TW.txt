@@ -8,12 +8,17 @@
 【下載區】
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
-需要下載的檔案（兩種安裝方式擇一）：
-  方式 A（建議）：XAMPP-installer.exe ＋ JigToolingsSetup-x.x.x.exe
-  方式 B（手動）：XAMPP-installer.exe ＋ jig-toolings-network-windows-x.x.x.zip
+我們的下載頁只提供 Jig 自己的檔案：
+  方式 A（建議）：JigToolingsSetup-x.x.x.exe
+  方式 B（手動）：jig-toolings-network-windows-x.x.x.zip
 
-XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.html
-（建議用下載區的 XAMPP-installer.exe，是我們測試過的版本）
+XAMPP 8.2.12-0 請另外到 Apache Friends 官方 SourceForge 下載：
+https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download
+檔名：xampp-windows-x64-8.2.12-0-VS16-installer.exe
+SHA-256: 12e818ce5aec79fe646606df3a80b35da865ec0213646ad7c92044dcfcec7535
+請下載這個版本（我們測過的）。
+若下載頁已沒有這個版本，請來信 aurastudio.studio.service@gmail.com，
+我們提供替代方式；請勿自行改用新版。
 
 安裝在「伺服器電腦」上（一台就好）。同公司其他電腦不用安裝，
 用瀏覽器連過來即可使用。
@@ -21,7 +26,7 @@ XAMPP 也可以到官方網站下載：https://www.apachefriends.org/download.ht
 ================================================================
 第 1 步：安裝 XAMPP（MySQL 資料庫，兩種方式都要做，只需一次）
 ================================================================
-1. 點兩下「XAMPP-installer.exe」
+1. 點兩下「xampp-windows-x64-8.2.12-0-VS16-installer.exe」
 2. 跳出「UAC / Program Files」英文警告視窗 → 按「確定」即可
    （這是 XAMPP 固定的提醒，不需要關閉 UAC）
 3. 「Select Components」頁：只需要 MySQL。

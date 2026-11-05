@@ -8,13 +8,16 @@
 [DOWNLOADS]
 https://github.com/gossipred/jig-toolings-network-distribution/releases/latest
 
-Files you need:
-  1. XAMPP-installer.dmg (MySQL database)
-  2. jig-toolings-network-macos-x.x.x.zip (the system)
+Our download page lists Jig files only:
+  jig-toolings-network-macos-x.x.x.zip
 
-XAMPP is also available from the official website:
-https://www.apachefriends.org/download.html
-(We recommend XAMPP-installer.dmg from our download page - the tested version.)
+Install XAMPP 8.2.4-0 separately from Apache Friends official SourceForge:
+https://sourceforge.net/projects/xampp/files/XAMPP%20Mac%20OS%20X/8.2.4/xampp-osx-8.2.4-0-installer.dmg/download
+File: xampp-osx-8.2.4-0-installer.dmg
+SHA-256: eb9888f2e3b131ae9a5fbec063a6b642a7285e065a8e5f5e97c699b71e2d7ac5
+Please download this version (tested by us).
+If this version is no longer available, email aurastudio.studio.service@gmail.com
+for an alternative. Do not select a newer version.
 
 Install on the SERVER computer only (one machine). Other computers in the
 company (Mac or Windows) do not need to install anything - they just use a
@@ -30,7 +33,7 @@ web browser.
 ================================================================
 STEP 1: Install XAMPP (MySQL database - once)
 ================================================================
-1. Double-click "XAMPP-installer.dmg", then the installer inside it
+1. Double-click "xampp-osx-8.2.4-0-installer.dmg", then the installer inside it
    (If blocked, see the SECURITY TIP above.)
 2. Apple Silicon (M-series) Macs: if asked to install Rosetta -> "Install"
    (XAMPP is an Intel build and needs Rosetta)
